@@ -5,7 +5,8 @@
 
 # Installer et charger les packages nécessaires
 libraries <- c("tidymodels", "modeltime", "timetk", "tidyverse", "lubridate", "tseries",
-               "ggplot2", "caret", "dplyr", "plm", "tidyr", "zoo", "forecast", "KFAS", "reshape2")
+               "ggplot2", "caret", "dplyr", "plm", "tidyr", "zoo", "forecast", "KFAS", "reshape2",
+               "lmtest", "purrr", "urca")
 
 
 # Verify if it's already installed
@@ -217,6 +218,67 @@ df_pred_daily_META <- apply_kalman_filter(df_pred_daily_META)
 df_pred_daily_GDP <- apply_kalman_filter(df_pred_daily_GDP)
 
 
+check_stationarity <- function(df, ticker) {
+  # Vérifier s'il y a des NA et les supprimer avant le test ADF
+  df_clean <- df[!is.na(df$pred_daily), ]
+  
+  # Tester la stationnarité avec le test de Dickey-Fuller (ADF)
+  adf_result <- adf.test(df_clean$pred_daily, alternative = "stationary")
+  
+  # Afficher les résultats du test de stationnarité
+  cat(paste("ADF test for", ticker, "p-value:", adf_result$p.value, "\n"))
+  
+  # Si la p-value est supérieure à 0.05, la série n'est pas stationnaire
+  if (adf_result$p.value > 0.05) {
+    cat(paste(ticker, "is not stationary. Applying first differencing...\n"))
+    df$pred_daily <- c(NA, diff(df$pred_daily, differences = 1))  # Ajoute NA au début pour garder la même longueur
+    
+    # Vérifier s'il y a des NA et les supprimer avant le test ADF
+    df_clean <- df[!is.na(df$pred_daily), ]
+    
+    # Refaire le test après la première différenciation
+    adf_result_diff1 <- adf.test(df_clean$pred_daily, alternative = "stationary")
+    cat(paste("ADF test after first differencing for", ticker, "p-value:", adf_result_diff1$p.value, "\n"))
+    
+    # Si la série est toujours non stationnaire, appliquer une seconde différenciation
+    if (adf_result_diff1$p.value > 0.05) {
+      cat(paste(ticker, "is still not stationary. Applying second differencing...\n"))
+      df$pred_daily <- c(NA, diff(df$pred_daily, differences = 1))  # Différence supplémentaire, ajout de NA
+      
+      # Vérifier s'il y a des NA et les supprimer avant le test ADF
+      df_clean <- df[!is.na(df$pred_daily), ]
+      
+      # Refaites le test après la seconde différenciation
+      adf_result_diff2 <- adf.test(df_clean$pred_daily, alternative = "stationary")
+      cat(paste("ADF test after second differencing for", ticker, "p-value:", adf_result_diff2$p.value, "\n"))
+    } else {
+      cat(paste(ticker, "is now stationary after first differencing.\n"))
+    }
+  } else {
+    cat(paste(ticker, "is stationary.\n"))
+  }
+  
+  return(df)
+}
+
+
+# Appliquer la fonction à chaque série
+df_pred_daily_TESLA <- check_stationarity(df_pred_daily_TESLA, "TESLA") # DIFF = 1
+df_pred_daily_NETFLIX <- check_stationarity(df_pred_daily_NETFLIX, "NETFLIX") # DIFF = 1
+df_pred_daily_META <- check_stationarity(df_pred_daily_META, "META") # DIFF = 0
+df_pred_daily_GDP <- check_stationarity(df_pred_daily_GDP, "GDP") # DIFF = 1
+df_pred_daily_SpaceX <- check_stationarity(df_pred_daily_SpaceX, "SpaceX") # DIFF = 1
+df_pred_daily_gas_us <- check_stationarity(df_pred_daily_gas_us, "Gas US") # DIFF = 1
+df_pred_daily_wti_oil <- check_stationarity(df_pred_daily_wti_oil, "WTI Oil") # DIFF = 0
+df_pred_daily_btc <- check_stationarity(df_pred_daily_btc, "BTC") # DIFF = 1
+df_pred_daily_us_sc <- check_stationarity(df_pred_daily_us_sc, "US Semi Conductor") # DIFF = 1
+df_pred_daily_infla <- check_stationarity(df_pred_daily_infla, "Inflation") # DIFF = 1
+df_pred_daily_huricane <- check_stationarity(df_pred_daily_huricane, "Hurricanes") # DIFF = 1
+df_pred_daily_eth <- check_stationarity(df_pred_daily_eth, "ETH") # DIFF = 1
+df_pred_daily_measles <- check_stationarity(df_pred_daily_measles, "Measles") # DIFF = 1
+df_pred_daily_apple <- check_stationarity(df_pred_daily_apple, "Apple") # DIFF = 0
+
+
 # Fusionner tous les DataFrames en un seul si besoin
 df_pred_all <- bind_rows(
   df_pred_daily_TESLA,
@@ -243,12 +305,12 @@ df_etf <- read_csv("ETF/combined_returns_2024.csv") %>%
   drop_na()  # Supprime toutes les lignes contenant au moins un NA
 
 
-
 # Charger le fichier complet des actions
 df_stock <- read_csv("analyzing the stock market/tilt_stocks_2024.csv") %>%
   select(-`...1`) %>%
   filter(ticker %in% c("TSLA", "NFLX", "META", "GOOG", "COIN", "INTC", "JPM", "XOM", "AAPL")) %>%
   mutate(date = as.Date(date))  # Convertir en format date
+
 
 # Vérifier les premières lignes du DataFrame filtré
 head(df_stock)
@@ -261,9 +323,180 @@ print(df_stock)
 
 
 
+check_stationarity <- function(df, ticker) {
+  # Vérifier s'il y a des NA et les supprimer avant le test ADF
+  df_clean <- df[!is.na(df$returns), ]  # Remplacer "close" par le nom exact de la colonne si nécessaire
+  
+  # Tester la stationnarité avec le test de Dickey-Fuller (ADF)
+  adf_result <- adf.test(df_clean$returns, alternative = "stationary")
+  
+  # Afficher les résultats du test de stationnarité
+  cat(paste("ADF test for", ticker, "p-value:", adf_result$p.value, "\n"))
+  
+  # Si la p-value est supérieure à 0.05, la série n'est pas stationnaire
+  if (adf_result$p.value > 0.05) {
+    cat(paste(ticker, "is not stationary. Applying first differencing...\n"))
+    df$returns <- c(NA, diff(df$returns, differences = 1))  # Applique la première différenciation
+    
+    # Vérifier s'il y a des NA et les supprimer avant le test ADF
+    df_clean <- df[!is.na(df$returns), ]
+    
+    # Refaire le test après la première différenciation
+    adf_result_diff1 <- adf.test(df_clean$returns, alternative = "stationary")
+    cat(paste("ADF test after first differencing for", ticker, "p-value:", adf_result_diff1$p.value, "\n"))
+    
+    # Si la série est toujours non stationnaire, appliquer une seconde différenciation
+    if (adf_result_diff1$p.value > 0.05) {
+      cat(paste(ticker, "is still not stationary. Applying second differencing...\n"))
+      df$returns <- c(NA, diff(df$returns, differences = 1))  # Différence supplémentaire
+      
+      # Vérifier s'il y a des NA et les supprimer avant le test ADF
+      df_clean <- df[!is.na(df$returns), ]
+      
+      # Refaites le test après la seconde différenciation
+      adf_result_diff2 <- adf.test(df_clean$returns, alternative = "stationary")
+      cat(paste("ADF test after second differencing for", ticker, "p-value:", adf_result_diff2$p.value, "\n"))
+    } else {
+      cat(paste(ticker, "is now stationary after first differencing.\n"))
+    }
+  } else {
+    cat(paste(ticker, "is stationary.\n"))
+  }
+  
+  return(df)
+}
+
+# Tester la stationnarité pour chaque ticker et afficher les résultats
+results <- list()
+
+for (ticker in unique(df_stock$ticker)) {
+  # Filtrer les données pour chaque ticker
+  stock_data <- df_stock %>% filter(ticker == ticker) %>% select(returns) %>% unlist()
+  
+  # Tester la stationnarité et appliquer les différenciations si nécessaire
+  df_stock <- check_stationarity(df_stock, ticker)
+}
 
 
-#################### vérifier si le join se fait sur les dates de mon stock 
+
+
+# granger causality 
+granger_causality_test <- function(pred_series, stock_series, max_lag = 5, pred_name = "Prediction Market", stock_name = "Stock") {
+  library(lmtest)
+  
+  # Fusionner les deux séries sur la date
+  df_combined <- inner_join(pred_series, stock_series, by = "date", suffix = c("_pred", "_stock"))
+  
+  # Supprimer les NA restants
+  df_clean <- df_combined %>% drop_na(pred_daily_pred, pred_daily_stock)
+  
+  if (nrow(df_clean) < (max_lag + 1)) {
+    return(data.frame(
+      Prediction_Market = pred_name,
+      Stock = stock_name,
+      p_value = NA,
+      result = "Not enough data"
+    ))
+  }
+  
+  # Créer les deux séries temporelles
+  ts_pred <- df_clean$pred_daily_pred
+  ts_stock <- df_clean$pred_daily_stock
+  
+  # Appliquer le test de Granger
+  test_result <- tryCatch({
+    grangertest(ts_stock ~ ts_pred, order = max_lag, data = df_clean)
+  }, error = function(e) {
+    return(NULL)
+  })
+  
+  if (is.null(test_result)) {
+    return(data.frame(
+      Prediction_Market = pred_name,
+      Stock = stock_name,
+      p_value = NA,
+      result = "Test failed"
+    ))
+  }
+  
+  # Extraire la p-value
+  p_value <- test_result$`Pr(>F)`[2]
+  result <- ifelse(p_value < 0.05, "Granger-causes", "Does not Granger-cause")
+  
+  return(data.frame(
+    Prediction_Market = pred_name,
+    Stock = stock_name,
+    p_value = p_value,
+    result = result
+  ))
+}
+
+
+# Liste des Prediction Markets
+prediction_markets <- list(
+  df_pred_daily_TESLA,
+  df_pred_daily_NETFLIX,
+  df_pred_daily_META,
+  df_pred_daily_GDP,
+  df_pred_daily_SpaceX,
+  df_pred_daily_gas_us,
+  df_pred_daily_wti_oil,
+  df_pred_daily_btc,
+  df_pred_daily_us_sc,
+  df_pred_daily_infla,
+  df_pred_daily_huricane,
+  df_pred_daily_eth,
+  df_pred_daily_measles,
+  df_pred_daily_apple
+)
+
+# Récupérer les noms pour les associer
+prediction_names <- sapply(prediction_markets, function(df) unique(df$id)[1])
+
+# Créer une liste de séries stock par ticker
+stock_tickers <- unique(df_stock$ticker)
+stock_series_list <- lapply(stock_tickers, function(tk) {
+  df_stock %>% filter(ticker == tk) %>%
+    select(date, pred_daily = returns)  # on suppose que la colonne 'close' contient le prix
+})
+names(stock_series_list) <- stock_tickers
+
+# Lancer les tests
+results <- list()
+
+for (i in seq_along(prediction_markets)) {
+  for (j in seq_along(stock_series_list)) {
+    result <- granger_causality_test(
+      pred_series = prediction_markets[[i]],
+      stock_series = stock_series_list[[j]],
+      max_lag = 5,
+      pred_name = prediction_names[i],
+      stock_name = names(stock_series_list)[j]
+    )
+    results[[length(results) + 1]] <- result
+  }
+}
+
+# Combiner tous les résultats en un seul tableau
+df_results <- bind_rows(results)
+
+# Trier par p-value croissante
+df_results_sorted <- df_results %>% arrange(p_value)
+
+# Afficher les résultats significatifs
+print(df_results_sorted %>% filter(!is.na(p_value) & p_value < 0.15))
+
+
+
+write_csv(df_results_sorted, "granger_results_all_combinations.csv")
+
+
+
+
+
+
+
+
 
 # Effectuer un left_join entre les prédictions et les actions
 df_combined <- df_pred_all %>%
@@ -276,55 +509,20 @@ head(df_combined)
 df_combined <- df_combined %>%
   filter(!is.na(returns))
 
-# Vérification
+
+# Deux principaux datasets qui regroupent les actions/ ETFs et les predictions markets
+
+
+# predictions markets
+head(df_pred_all)
+
+# actions/ETFs
+head(df_stock)
+
+# regroupement des actions/ETFs et des predictions markets en un df
 head(df_combined)
 
 
-
-# Créer une table avec une ligne par jour et par paire action/prédiction
-correlation_tbl <- df_combined %>%
-  group_by(ticker, id) %>%  # ticker = action, id = prédiction Kalshi
-  summarise(
-    correlation = cor(pred_daily, returns, use = "complete.obs"),
-    n_obs = n(),
-    .groups = "drop"
-  ) %>%
-  arrange(desc(abs(correlation)))  # Trier par force de la corrélation
-
-# Affichage
-print(correlation_tbl)
-
-
-
-ggplot(correlation_tbl, aes(x = reorder(paste(ticker, id, sep = "-"), correlation), y = correlation, fill = correlation)) +
-  geom_col() +
-  coord_flip() +
-  labs(title = "Corrélation entre actions et marchés de prédiction",
-       x = "Paire (Action - Marché Kalshi)",
-       y = "Corrélation") +
-  scale_fill_gradient2(low = "red", high = "blue", mid = "white", midpoint = 0) +
-  theme_minimal()
-
-
-correlation_tbl <- correlation_tbl %>%
-  mutate(correlation = as.numeric(correlation)) %>%
-  filter(abs(correlation) > 0.05)
-
-
-
-corr_matrix <- df_combined %>%
-  filter(!is.na(pred_daily), !is.na(returns)) %>%
-  group_by(ticker, id) %>%
-  summarise(correlation = cor(pred_daily, returns, use = "complete.obs"), .groups = "drop") %>%
-  pivot_wider(names_from = ticker, values_from = correlation)
-
-corr_matrix_long <- melt(corr_matrix, id.vars = "id")
-
-ggplot(corr_matrix_long, aes(x = variable, y = id, fill = value)) +
-  geom_tile() +
-  scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0) +
-  theme_minimal() +
-  labs(title = "Heatmap des corrélations", x = "Action", y = "Prédiction Kalshi", fill = "Corrélation")
 
 
 

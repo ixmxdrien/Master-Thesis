@@ -16,7 +16,10 @@ etfs = {
 
 # Dates
 start_date = "2024-01-01"
-end_date = "2024-04-18"
+end_date = "2024-12-12"
+
+# Liste pour stocker les dataframes
+all_returns = []
 
 for name, ticker in etfs.items():
     # Récupération des données
@@ -27,18 +30,19 @@ for name, ticker in etfs.items():
         data.columns = [col[0] for col in data.columns]
     
     # Calcul des rendements journaliers
-    data["Daily Return"] = data["Close"].pct_change()
+    returns = pd.DataFrame({
+        'date': data.index,
+        'ticker': ticker,
+        'returns': data["Close"].pct_change()
+    })
     
-    # Ajouter la colonne 'Ticker'
-    data["Ticker"] = ticker
-    
-    # Réorganiser les colonnes (optionnel)
-    cols = ["Ticker"] + [col for col in data.columns if col != "Ticker"]
-    data = data[cols]
-    
-    # Sauvegarde
-    filename = f"{name.replace(' ', '_')}_returns_2024.csv"
-    filepath = os.path.join(output_dir, filename)
-    data.to_csv(filepath)
-    
-    print(f"{name} : sauvegardé dans {filepath} ✅")
+    all_returns.append(returns)
+
+# Combiner tous les dataframes
+combined_returns = pd.concat(all_returns, ignore_index=True)
+
+# Sauvegarder le fichier combiné
+combined_filepath = os.path.join(output_dir, "combined_returns_2024.csv")
+combined_returns.to_csv(combined_filepath, index=False)
+
+print(f"Fichier combiné sauvegardé dans {combined_filepath} ✅")

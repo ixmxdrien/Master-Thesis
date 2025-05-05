@@ -5,7 +5,7 @@
 
 # Installer et charger les packages nécessaires
 libraries <- c("tidymodels", "modeltime", "timetk", "tidyverse", "lubridate", "tseries",
-               "ggplot2", "caret", "dplyr", "plm", "tidyr", "zoo", "forecast")
+               "ggplot2", "caret", "dplyr", "plm", "tidyr", "zoo", "forecast", "KFAS", "reshape2")
 
 
 # Verify if it's already installed
@@ -41,144 +41,291 @@ df_q1_meta <- read_csv("analyzing the stock market/meta_users/kalshi-chart-data-
 df_q2_meta <- read_csv("analyzing the stock market/meta_users/kalshi-chart-data-metadap-24-q2.csv") %>% mutate(quarter = "Q2")
 df_q3_meta <- read_csv("analyzing the stock market/meta_users/kalshi-chart-data-metadap-24-q3.csv") %>% mutate(quarter = "Q3")
 
+# GDP
+df_q1_gdp <- read_csv("analyzing the stock market/GDP_US/kalshi-chart-data-gdp-24apr25.csv") %>% mutate(quarter = "Q1")
+df_q2_gdp <- read_csv("analyzing the stock market/GDP_US/kalshi-chart-data-gdp-24jul25.csv") %>% mutate(quarter = "Q2")
+df_q3_gdp <- read_csv("analyzing the stock market/GDP_US/kalshi-chart-data-gdp-24oct30.csv") %>% mutate(quarter = "Q3")
+df_q4_gdp <- read_csv("analyzing the stock market/GDP_US/kalshi-chart-data-kxgdp-25jan31.csv") %>% mutate(quarter = "Q4")
 
 # Fusionner les datasets
+df_Tesla <- bind_rows(df_q1_tesla, df_q2_tesla, df_q3_tesla, df_q4_tesla) %>%
+  mutate(ticker = "Tesla")
+df_Netflix <- bind_rows(df_q1_netflix, df_q2_netflix, df_q3_netflix, df_q4_netflix) %>%
+  mutate(ticker = "Netflix")
+df_Meta <- bind_rows(df_q1_meta, df_q2_meta, df_q3_meta) %>%
+  mutate(ticker = "Meta")
+df_GDP <- bind_rows(df_q1_gdp, df_q2_gdp, df_q3_gdp, df_q4_gdp ) %>%
+  mutate(ticker = "GDP")
 
-df_predictions_TESLA <- bind_rows(df_q1_tesla, df_q2_tesla, df_q3_tesla, df_q4_tesla)
+# Autres datasets
+df_SpaceX <- read_csv("analyzing the stock market/spaceX/kalshi-chart-data-spacexcount-24.csv") %>%
+  mutate(ticker = "SpaceX")
+df_gas_us <- read_csv("analyzing the stock market/price_gas_usa/kalshi-chart-data-aaagasmaxtx-24dec31.csv") %>%
+  mutate(ticker = "Gas US")
+df_wti_oil <- read_csv("analyzing the stock market/wti_oil/kalshi-chart-data-wtimin-24dec31.csv") %>%
+  mutate(ticker = "WTI Oil")
+df_google_sp <- read_csv("analyzing the stock market/Sundar_Pichai_google/kalshi-chart-data-googleceochange.csv") %>%
+  mutate(ticker = "Google")
+df_fed_rate <- read_csv("analyzing the stock market/fed_rate_us/kalshi-chart-data-fedratemin-24dec31.csv") %>%
+  mutate(ticker = "Fed Rate")
+df_btc <- read_csv("analyzing the stock market/btc/kalshi-chart-data-btcmaxy-24dec31.csv") %>%
+  mutate(ticker = "BTC")
+df_us_sc <- read_csv("analyzing the stock market/us_semi_conductor/kalshi-chart-data-semiprodh-24.csv") %>%
+  mutate(ticker = "US Semi Conductor")
+df_infla <- read_csv("analyzing the stock market/inflation/kalshi-chart-data-acpicore-2024.csv") %>%
+  mutate(ticker = "Inflation")
+df_layoffs <- read_csv("analyzing the stock market/big_tech_layoffs/kalshi-chart-data-bigtechlayoff-24dec31.csv") %>%
+  mutate(ticker = "Layoffs")
+df_huricane <- read_csv("analyzing the stock market/number_of_huricane/kalshi-chart-data-hurctot-24dec01.csv") %>%
+  mutate(ticker = "Hurricanes")
+df_eth <- read_csv("analyzing the stock market/eth/kalshi-chart-data-ethmaxy-24dec31.csv") %>%
+  mutate(ticker = "ETH")
+df_measles <- read_csv("analyzing the stock market/Measles_cases/kalshi-chart-data-measles-24.csv") %>%
+  mutate(ticker = "Measles")
+df_apple <- read_csv("analyzing the stock market/Apple/kalshi-chart-data-applecar-24dec31.csv") %>%
+  mutate(ticker = "Apple")
 
-df_predictions_NETFLIX <- bind_rows(df_q1_netflix, df_q2_netflix, df_q3_netflix, df_q4_netflix)
-
-df_predictions_META <- bind_rows(df_q1_meta, df_q2_meta, df_q3_meta)
-
-
-head(df_predictions_TESLA)
-
-head(df_predictions_NETFLIX)
-
-head(df_predictions_META)
+# Visualisation des head des datasets
+head(df_Tesla)
+head(df_Netflix)
+head(df_Meta)
+head(df_GDP)
+head(df_SpaceX)
+head(df_gas_us)
+head(df_wti_oil)
+head(df_google_sp)
+head(df_fed_rate)
+head(df_btc)
+head(df_us_sc)
+head(df_infla)
+head(df_layoffs)
+head(df_huricane)
+head(df_eth)
+head(df_measles)
+head(df_apple)
 
 
 # Conversion de la colonne Timestamp en type Date pour chaque dataset
-df_predictions_TESLA <- df_predictions_TESLA %>% mutate(date = as.Date(Timestamp))
-df_predictions_NETFLIX <- df_predictions_NETFLIX %>% mutate(date = as.Date(Timestamp))
-df_predictions_META <- df_predictions_META %>% mutate(date = as.Date(Timestamp))
+# Fonction pour transformer un df avec colonne 'Timestamp' et 'Value'
+process_df_daily <- function(df, ticker) {
+  df %>%
+    mutate(date = as.Date(Timestamp)) %>% 
+    mutate(id = ticker) %>%      # Conversion en date
+    group_by(date, id) %>%
+    summarise(pred_daily = mean(Value, na.rm = TRUE)) # Moyenne journalière
+}
 
-# Création des dataframes de prédictions journalières pour chaque entreprise
-df_predictions_daily_TESLA <- df_predictions_TESLA %>%
-  group_by(date) %>%
-  summarise(
-    pred_daily = mean(Value, na.rm = TRUE)   # Moyenne journalière pour Tesla
-  )
-
-df_predictions_daily_NETFLIX <- df_predictions_NETFLIX %>%
-  group_by(date) %>%
-  summarise(
-    pred_daily = mean(Value, na.rm = TRUE)   # Moyenne journalière pour Netflix
-  )
-
-df_predictions_daily_META <- df_predictions_META %>%
-  group_by(date) %>%
-  summarise(
-    pred_daily = mean(Value, na.rm = TRUE)   # Moyenne journalière pour Meta
-  )
-
-# Affichage des dataframes de prédictions journalières
-print(df_predictions_daily_TESLA)
-print(df_predictions_daily_NETFLIX)
-print(df_predictions_daily_META)
+df_pred_daily_TESLA    <- process_df_daily(df_Tesla, "TESLA")
+df_pred_daily_NETFLIX  <- process_df_daily(df_Netflix, "NETFLIX")
+df_pred_daily_META     <- process_df_daily(df_Meta, "META")
+df_pred_daily_GDP      <- process_df_daily(df_GDP, "GDP")
+df_pred_daily_SpaceX   <- process_df_daily(df_SpaceX, "SpaceX")
+df_pred_daily_gas_us   <- process_df_daily(df_gas_us, "gas_us")
+df_pred_daily_wti_oil  <- process_df_daily(df_wti_oil, "wti_oil")
+df_pred_daily_btc      <- process_df_daily(df_btc, "btc")
+df_pred_daily_us_sc    <- process_df_daily(df_us_sc, "us_sc")
+df_pred_daily_infla    <- process_df_daily(df_infla, "infla")
+df_pred_daily_huricane <- process_df_daily(df_huricane, "huricane")
+df_pred_daily_eth      <- process_df_daily(df_eth, "eth")
+df_pred_daily_measles  <- process_df_daily(df_measles, "measles")
 
 
+process_df_daily_forecast <- function(df, ticker) {
+  df %>%
+    mutate(
+      date = as.Date(Timestamp),             # Conversion en date
+      Forecast = as.numeric(gsub("%", "", Forecast)),  # Enlever le % et convertir en numeric
+      id = ticker                        # Ajouter une colonne 'ticker'
+    ) %>%
+    group_by(date, id) %>%               # Groupement par date et ticker
+    summarise(pred_daily = mean(Forecast, na.rm = TRUE)) %>%  # Moyenne journalière
+    ungroup()                                # Annuler la mise en groupe
+}
+
+
+df_pred_daily_google   <- process_df_daily_forecast(df_google_sp, "Google")
+df_pred_daily_fed      <- process_df_daily_forecast(df_fed_rate, "Fed Rate")
+df_pred_daily_layoffs  <- process_df_daily_forecast(df_layoffs, "Layoffs")
+df_pred_daily_apple    <- process_df_daily_forecast(df_apple, "Apple")
+
+
+head(df_pred_daily_google)
 
 
 # Créer une séquence complète de dates pour chaque dataset
-complete_dates_TESLA <- tibble(date = seq(min(df_predictions_daily_TESLA$date, na.rm = TRUE),
-                                          max(df_predictions_daily_TESLA$date, na.rm = TRUE), by = "day"))
+complete_dates_TESLA <- tibble(date = seq(min(df_pred_daily_TESLA$date, na.rm = TRUE),
+                                          max(df_pred_daily_TESLA$date, na.rm = TRUE), by = "day"))
 
-complete_dates_NETFLIX <- tibble(date = seq(min(df_predictions_daily_NETFLIX$date, na.rm = TRUE),
-                                            max(df_predictions_daily_NETFLIX$date, na.rm = TRUE), by = "day"))
+complete_dates_NETFLIX <- tibble(date = seq(min(df_pred_daily_NETFLIX$date, na.rm = TRUE),
+                                            max(df_pred_daily_NETFLIX$date, na.rm = TRUE), by = "day"))
 
-complete_dates_META <- tibble(date = seq(min(df_predictions_daily_META$date, na.rm = TRUE),
-                                         max(df_predictions_daily_META$date, na.rm = TRUE), by = "day"))
+complete_dates_META <- tibble(date = seq(min(df_pred_daily_META$date, na.rm = TRUE),
+                                         max(df_pred_daily_META$date, na.rm = TRUE), by = "day"))
+
+complete_dates_GDP <- tibble(date = seq(min(df_pred_daily_GDP$date, na.rm = TRUE),
+                                         max(df_pred_daily_GDP$date, na.rm = TRUE), by = "day"))
+
 
 # Joindre avec les datasets d'origine
-df_predictions_daily_TESLA <- complete_dates_TESLA %>%
-  left_join(df_predictions_daily_TESLA, by = "date") %>%
-  mutate(pred_daily = na.approx(pred_daily, na.rm = FALSE))  # Interpolation linéaire
+df_pred_daily_TESLA <- complete_dates_TESLA %>%
+  left_join(df_pred_daily_TESLA, by = "date")
 
-df_predictions_daily_NETFLIX <- complete_dates_NETFLIX %>%
-  left_join(df_predictions_daily_NETFLIX, by = "date") %>%
-  mutate(pred_daily = na.approx(pred_daily, na.rm = FALSE))  
+df_pred_daily_NETFLIX <- complete_dates_NETFLIX %>%
+  left_join(df_pred_daily_NETFLIX, by = "date")
 
-df_predictions_daily_META <- complete_dates_META %>%
-  left_join(df_predictions_daily_META, by = "date") %>%
-  mutate(pred_daily = na.approx(pred_daily, na.rm = FALSE))
+df_pred_daily_META <- complete_dates_META %>%
+  left_join(df_pred_daily_META, by = "date")
 
-# Alternative : Remplissage par la dernière valeur connue
-df_predictions_daily_TESLA$pred_daily <- na.locf(df_predictions_daily_TESLA$pred_daily, na.rm = FALSE)
-df_predictions_daily_NETFLIX$pred_daily <- na.locf(df_predictions_daily_NETFLIX$pred_daily, na.rm = FALSE)
-df_predictions_daily_META$pred_daily <- na.locf(df_predictions_daily_META$pred_daily, na.rm = FALSE)
+df_pred_daily_GDP <- complete_dates_GDP %>%
+  left_join(df_pred_daily_GDP, by = "date")
+  
+  
+  
 
-# Vérification
-print(df_predictions_daily_TESLA)
-print(df_predictions_daily_NETFLIX)
-print(df_predictions_daily_META)
+# Fonction pour appliquer le filtre de Kalman et remplir les valeurs manquantes
+apply_kalman_filter <- function(df) {
+  # Convertir les données en série temporelle avec la bonne fréquence (365 jours)
+  ts_data <- ts(df$pred_daily, frequency = 365, start = c(2024, 1))  # ajuster le début de la série selon les données
+  
+  # Créer un modèle d'état pour le filtre de Kalman avec tendance linéaire
+  model <- SSModel(ts_data ~ -1 + SSMtrend(degree = 1, Q = 1))  # Modèle avec tendance (SSMtrend)
+  
+  # Appliquer le filtre de Kalman pour estimer les valeurs manquantes
+  kalman_fit <- KFS(model, simplify = TRUE)
+  
+  # Extraire les valeurs filtrées (prévisions de Kalman)
+  kalman_values <- kalman_fit$a
+  
+  # Vérifier si la longueur des valeurs filtrées est égale à celle du dataframe
+  if (length(kalman_values) != nrow(df)) {
+    # Ajuster la longueur en coupant la dernière ligne si nécessaire
+    kalman_values <- kalman_values[1:nrow(df)]
+  }
+  
+  # Mettre à jour la colonne 'pred_daily' avec les valeurs filtrées
+  df$pred_daily <- ifelse(is.na(df$pred_daily), kalman_values, df$pred_daily)
+  
+  df$id[is.na(df$id)] <- unique(df$id[!is.na(df$id)])[1]
+  
+  return(df)
+}
+
+# Appliquer cette fonction à la série de données META
+df_pred_daily_TESLA <- apply_kalman_filter(df_pred_daily_TESLA)
+df_pred_daily_NETFLIX <- apply_kalman_filter(df_pred_daily_NETFLIX)
+df_pred_daily_META <- apply_kalman_filter(df_pred_daily_META)
+df_pred_daily_GDP <- apply_kalman_filter(df_pred_daily_GDP)
 
 
-
-# Ajout de la colonne 'company' pour chaque entreprise
-df_predictions_daily_TESLA <- df_predictions_daily_TESLA %>%
-  mutate(ticker = "TSLA")
-
-df_predictions_daily_NETFLIX <- df_predictions_daily_NETFLIX %>%
-  mutate(ticker = "NFLX")
-
-df_predictions_daily_META <- df_predictions_daily_META %>%
-  mutate(ticker = "META")
-
-# Fusionner tous les DataFrames en un seul
-df_predictions_all <- bind_rows(
-  df_predictions_daily_TESLA,
-  df_predictions_daily_NETFLIX,
-  df_predictions_daily_META
+# Fusionner tous les DataFrames en un seul si besoin
+df_pred_all <- bind_rows(
+  df_pred_daily_TESLA,
+  df_pred_daily_NETFLIX,
+  df_pred_daily_META,
+  df_pred_daily_GDP,
+  df_pred_daily_SpaceX,
+  df_pred_daily_gas_us,
+  df_pred_daily_wti_oil,
+  df_pred_daily_btc,
+  df_pred_daily_us_sc,
+  df_pred_daily_infla,   
+  df_pred_daily_huricane,
+  df_pred_daily_eth,
+  df_pred_daily_measles,
+  df_pred_daily_apple
 )
 
-# Afficher le DataFrame final
-print(df_predictions_all)
+head(df_pred_all)
+
+
+# Charger les données ETF et supprimer les lignes avec des NA
+df_etf <- read_csv("ETF/combined_returns_2024.csv") %>%
+  drop_na()  # Supprime toutes les lignes contenant au moins un NA
 
 
 
 # Charger le fichier complet des actions
 df_stock <- read_csv("analyzing the stock market/tilt_stocks_2024.csv") %>%
   select(-`...1`) %>%
-  filter(ticker %in% c("TSLA", "NFLX", "META")) %>%
+  filter(ticker %in% c("TSLA", "NFLX", "META", "GOOG", "COIN", "INTC", "JPM", "XOM", "AAPL")) %>%
   mutate(date = as.Date(date))  # Convertir en format date
 
 # Vérifier les premières lignes du DataFrame filtré
 head(df_stock)
 
+# Fusionner les deux DataFrame
+df_stock <- bind_rows(df_stock, df_etf)
+
+# Afficher le DataFrame final
+print(df_stock)
+
+
+
+
+
+#################### vérifier si le join se fait sur les dates de mon stock 
 
 # Effectuer un left_join entre les prédictions et les actions
-df_combined <- df_predictions_all %>%
-  left_join(df_stock, by = c("date", "ticker"))
+df_combined <- df_pred_all %>%
+  left_join(df_stock, by = c("date"))
 
 # Vérifier les premières lignes du DataFrame combiné
 head(df_combined)
 
-
-# Remplacer les NA par 0 dans la colonne 'returns' pour les week-ends et trier par date
+# Supprimer les lignes avec NA returns
 df_combined <- df_combined %>%
-  mutate(returns = ifelse(is.na(returns), 0, returns)) %>%
-  arrange(date)
-
-# Vérifier les premières lignes après modification et tri
-head(df_combined)
-
-
-df_combined <- df_combined %>%
-  filter(date >= as.Date("2024-03-22"))
+  filter(!is.na(returns))
 
 # Vérification
 head(df_combined)
+
+
+
+# Créer une table avec une ligne par jour et par paire action/prédiction
+correlation_tbl <- df_combined %>%
+  group_by(ticker, id) %>%  # ticker = action, id = prédiction Kalshi
+  summarise(
+    correlation = cor(pred_daily, returns, use = "complete.obs"),
+    n_obs = n(),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(abs(correlation)))  # Trier par force de la corrélation
+
+# Affichage
+print(correlation_tbl)
+
+
+
+ggplot(correlation_tbl, aes(x = reorder(paste(ticker, id, sep = "-"), correlation), y = correlation, fill = correlation)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Corrélation entre actions et marchés de prédiction",
+       x = "Paire (Action - Marché Kalshi)",
+       y = "Corrélation") +
+  scale_fill_gradient2(low = "red", high = "blue", mid = "white", midpoint = 0) +
+  theme_minimal()
+
+
+correlation_tbl <- correlation_tbl %>%
+  mutate(correlation = as.numeric(correlation)) %>%
+  filter(abs(correlation) > 0.05)
+
+
+
+corr_matrix <- df_combined %>%
+  filter(!is.na(pred_daily), !is.na(returns)) %>%
+  group_by(ticker, id) %>%
+  summarise(correlation = cor(pred_daily, returns, use = "complete.obs"), .groups = "drop") %>%
+  pivot_wider(names_from = ticker, values_from = correlation)
+
+corr_matrix_long <- melt(corr_matrix, id.vars = "id")
+
+ggplot(corr_matrix_long, aes(x = variable, y = id, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0) +
+  theme_minimal() +
+  labs(title = "Heatmap des corrélations", x = "Action", y = "Prédiction Kalshi", fill = "Corrélation")
+
 
 
 # Créer un tableau simplifié avec 'id', 'date' et 'value'
@@ -205,6 +352,7 @@ split_by_id <- function(df) {
     cumulative = TRUE
   )
 }
+
 
 # Appliquer le split séparément pour chaque id
 splits_list <- data_tbl %>%
@@ -242,6 +390,11 @@ rec_obj_xgb <- recipe(value ~ ., train_data) %>%
 
 summary(prep(rec_obj_xgb))
 
+
+
+
+
+
 #############################################################################################
 ################################# ARIMA-X Modeling Individual ###############################
 #############################################################################################
@@ -249,32 +402,33 @@ summary(prep(rec_obj_xgb))
 ###################################### TESLA ################################################
 
 # Extraire les données pour Tesla
-df_tesla <- df_combined %>%
+df_Tesla <- df_combined %>%
   filter(ticker == "TSLA") %>%
+  filter(id == "TSLA") %>%
   select(date, returns, pred_daily) %>%
   drop_na()
 
 # Tester la stationnarité de la série
-adf.test(df_tesla$returns)
-adf.test(df_tesla$pred_daily)
+adf.test(df_Tesla$returns)
+adf.test(df_Tesla$pred_daily)
 
 # Différencier la série pred_daily pour la rendre stationnaire si nécessaire
-diff_pred_tesla <- diff(df_tesla$pred_daily)
+diff_pred_tesla <- diff(df_Tesla$pred_daily)
 
-# Ajouter la colonne diff_pred_daily à df_tesla
-df_tesla$diff_pred_daily <- c(NA, diff_pred_tesla)  # Ajouter un NA au début pour maintenir la longueur
+# Ajouter la colonne diff_pred_daily à df_Tesla
+df_Tesla$diff_pred_daily <- c(NA, diff_pred_tesla)  # Ajouter un NA au début pour maintenir la longueur
 
 # Vérification de la structure après ajout de la colonne
-head(df_tesla)
+head(df_Tesla)
 
 # Supprimer la première ligne avec NA
-df_tesla <- df_tesla[-1,]
+df_Tesla <- df_Tesla[-1,]
 
 # Vérifier la stationnarité de la série différenciée
-adf.test(df_tesla$diff_pred_daily)
+adf.test(df_Tesla$diff_pred_daily)
 
 # Split temporel : 80% train / 20% test
-splits_tesla <- initial_time_split(df_tesla, prop = 0.8)
+splits_tesla <- initial_time_split(df_Tesla, prop = 0.8)
 
 # Modèle ARIMA avec pred_daily différenciée comme variable exogène
 model_fit_arima_xreg_tesla <- arima_reg() %>%
@@ -294,7 +448,7 @@ calibration_tbl_tesla <- model_table_tesla %>%
 tesla_forecast_plot <- calibration_tbl_tesla %>%
   modeltime_forecast(
     new_data = testing(splits_tesla),
-    actual_data = df_tesla
+    actual_data = df_Tesla
   ) %>%
   plot_modeltime_forecast(.interactive = FALSE)
 
@@ -430,7 +584,7 @@ print(meta_accuracy)
 arima_forecast_tesla <- calibration_tbl_tesla %>%
   modeltime_forecast(
     new_data = testing(splits_tesla),
-    actual_data = df_tesla
+    actual_data = df_Tesla
   ) %>%
   select(.index, .value) %>%
   rename(date = .index, prediction = .value) %>%
@@ -481,7 +635,7 @@ print(arima_plot)
 # Réentraîner les modèles ARIMA-X sur l'ensemble des données pour chaque action
 # TESLA
 refit_model_tesla <- model_table_tesla %>%
-  modeltime_refit(data = df_tesla)
+  modeltime_refit(data = df_Tesla)
 
 # NETFLIX
 refit_model_netflix <- model_table_netflix %>%
@@ -496,7 +650,7 @@ refit_model_meta <- model_table_meta %>%
 forecast_horizon <- 52
 
 # TESLA - Créer un dataframe pour les prévisions futures
-future_tesla <- df_tesla %>%
+future_tesla <- df_Tesla %>%
   future_frame(
     .date_var = date,
     .length_out = forecast_horizon
@@ -504,7 +658,7 @@ future_tesla <- df_tesla %>%
 
 # Ajouter une colonne diff_pred_daily pour les prévisions futures
 # Nous utilisons la dernière valeur connue comme approximation
-future_tesla$diff_pred_daily <- tail(df_tesla$diff_pred_daily, 1)
+future_tesla$diff_pred_daily <- tail(df_Tesla$diff_pred_daily, 1)
 
 # NETFLIX - Créer un dataframe pour les prévisions futures
 future_netflix <- df_netflix %>%
@@ -531,7 +685,7 @@ future_meta$diff_pred_daily <- tail(df_meta$diff_pred_daily, 1)
 future_forecast_tesla <- refit_model_tesla %>%
   modeltime_forecast(
     new_data = future_tesla,
-    actual_data = df_tesla,
+    actual_data = df_Tesla,
     conf_interval = FALSE  # Désactiver les intervalles de confiance
   )
 

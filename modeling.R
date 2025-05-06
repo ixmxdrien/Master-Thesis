@@ -6,7 +6,7 @@
 # Installer et charger les packages nécessaires
 libraries <- c("tidymodels", "modeltime", "timetk", "tidyverse", "lubridate", "tseries",
                "ggplot2", "caret", "dplyr", "plm", "tidyr", "zoo", "forecast", "KFAS", "reshape2",
-               "lmtest", "purrr", "urca")
+               "lmtest", "purrr", "urca", "Metrics")
 
 
 # Verify if it's already installed
@@ -308,7 +308,7 @@ df_etf <- read_csv("ETF/combined_returns_2024.csv") %>%
 # Charger le fichier complet des actions
 df_stock <- read_csv("analyzing the stock market/tilt_stocks_2024.csv") %>%
   select(-`...1`) %>%
-  filter(ticker %in% c("TSLA", "NFLX", "META", "GOOG", "COIN", "INTC", "JPM", "XOM", "AAPL")) %>%
+  filter(ticker %in% c("TSLA", "NFLX", "META", "GOOG", "COIN", "INTC", "JPM", "XOM", "AAPL", "BAC", "TOT", "PFE", "JNJ", "MSFT", "AMZN", "WMT", "NVDA")) %>%
   mutate(date = as.Date(date))  # Convertir en format date
 
 
@@ -491,13 +491,6 @@ print(df_results_sorted %>% filter(!is.na(p_value) & p_value < 0.15))
 write_csv(df_results_sorted, "granger_results_all_combinations.csv")
 
 
-
-
-
-
-
-
-
 # Effectuer un left_join entre les prédictions et les actions
 df_combined <- df_pred_all %>%
   left_join(df_stock, by = c("date"))
@@ -510,19 +503,50 @@ df_combined <- df_combined %>%
   filter(!is.na(returns))
 
 
-# Deux principaux datasets qui regroupent les actions/ ETFs et les predictions markets
+
+correlation_tbl <- df_combined %>%
+  group_by(ticker, id) %>%  # ticker = action, id = prédiction Kalshi
+  summarise(
+    correlation = cor(pred_daily, returns, use = "complete.obs"),
+    n_obs = n(),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(abs(correlation)))  # Trier par force de la corrélation
+
+# Affichage
+print(correlation_tbl)
 
 
-# predictions markets
-head(df_pred_all)
 
-# actions/ETFs
-head(df_stock)
+ggplot(correlation_tbl, aes(x = reorder(paste(ticker, id, sep = "-"), correlation), y = correlation, fill = correlation)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Corrélation entre actions et marchés de prédiction",
+       x = "Paire (Action - Marché Kalshi)",
+       y = "Corrélation") +
+  scale_fill_gradient2(low = "red", high = "blue", mid = "white", midpoint = 0) +
+  theme_minimal()
 
-# regroupement des actions/ETFs et des predictions markets en un df
-head(df_combined)
+
+correlation_tbl <- correlation_tbl %>%
+  mutate(correlation = as.numeric(correlation)) %>%
+  filter(abs(correlation) > 0.05)
 
 
+
+corr_matrix <- df_combined %>%
+  filter(!is.na(pred_daily), !is.na(returns)) %>%
+  group_by(ticker, id) %>%
+  summarise(correlation = cor(pred_daily, returns, use = "complete.obs"), .groups = "drop") %>%
+  pivot_wider(names_from = ticker, values_from = correlation)
+
+corr_matrix_long <- melt(corr_matrix, id.vars = "id")
+
+ggplot(corr_matrix_long, aes(x = variable, y = id, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0) +
+  theme_minimal() +
+  labs(title = "Heatmap des corrélations", x = "Action", y = "Prédiction Kalshi", fill = "Corrélation")
 
 
 
@@ -589,6 +613,88 @@ rec_obj_xgb <- recipe(value ~ ., train_data) %>%
 summary(prep(rec_obj_xgb))
 
 
+#################################################
+
+
+for (stock in names(stock_series_list)) {
+  cat("\n\n============================\n")
+  cat(paste("📈 Traitement du modèle pour:", stock, "\n"))
+  
+  target_df <- stock_series_list[[stock]] %>% drop_na()
+  
+  if (nrow(target_df) < 50) {
+    cat("❌ Trop peu de données pour", stock, "\n")
+    next
+  }
+  
+  # Trouver les variables Granger-causales pour cette action
+  relevant_vars <- df_results_sorted %>%
+    filter(Stock == stock, result == "Granger-causes", !is.na(p_value), p_value < 0.05) %>%
+    pull(Prediction_Market) %>%
+    unique()
+  
+  cat(paste("✅ Variables exogènes identifiées:", paste(relevant_vars, collapse = ", "), "\n"))
+  
+  if (length(relevant_vars) == 0) {
+    cat("⚠️ Aucune variable exogène significative pour", stock, "\n")
+    next
+  }
+  
+  # Construction du dataset complet avec les variables exogènes
+  tryCatch({
+    exog_data_list <- list()
+    for (var in relevant_vars) {
+      var_df <- df_pred_all %>% filter(id == var) %>% select(date, pred_daily)
+      names(var_df)[2] <- var  # Renomme la colonne avec le nom de la variable
+      exog_data_list[[var]] <- var_df
+    }
+    
+    exog_combined <- Reduce(function(x, y) full_join(x, y, by = "date"), exog_data_list)
+    model_data <- target_df %>% left_join(exog_combined, by = "date") %>% arrange(date)
+    
+    cat("🔍 Fusion effectuée. Lignes disponibles:", nrow(model_data), "\n")
+    
+    # Supprimer les NA
+    model_data <- model_data %>% drop_na()
+    
+    if (nrow(model_data) < 50) {
+      cat("❌ Trop peu de données après nettoyage pour", stock, "\n")
+      next
+    }
+    
+    # Construction des matrices
+    y <- ts(model_data$pred_daily, frequency = 365)
+    xreg <- as.matrix(model_data %>% select(-date, -pred_daily))
+    
+    cat("🧠 Entraînement du modèle ARIMAX pour", stock, "\n")
+    
+    fit <- auto.arima(y, xreg = xreg, seasonal = FALSE)
+    
+    cat("✅ Modèle ARIMAX entraîné pour", stock, "\n")
+    print(summary(fit))
+    
+    # Générer les prévisions
+    h <- 7
+    future_exog <- tail(xreg, h)  # ou à remplacer par xreg_futur si tu as les données
+    
+    forecasted <- forecast(fit, xreg = future_exog, h = h)
+    print(forecasted)
+    
+    # Visualisation des prévisions
+    cat("📊 Visualisation des prévisions pour", stock, "\n")
+    plot(forecasted, main = paste("Prévisions ARIMAX pour", stock), col = "blue")
+    
+  }, error = function(e) {
+    cat(paste("❌ ERREUR pour", stock, ":", e$message, "\n"))
+  })
+}
+
+forecasted <- forecast(fit, xreg = future_exog, h = h)
+
+
+plot(forecasted, main = paste("Prévisions ARIMAX pour", stock), col = "blue")
+
+
 
 
 
@@ -602,7 +708,6 @@ summary(prep(rec_obj_xgb))
 # Extraire les données pour Tesla
 df_Tesla <- df_combined %>%
   filter(ticker == "TSLA") %>%
-  filter(id == "TSLA") %>%
   select(date, returns, pred_daily) %>%
   drop_na()
 

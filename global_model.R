@@ -313,6 +313,19 @@ forecast_results <- refit_tbl %>%
     conf_by_id = TRUE
   )
 
+# Visualize forecasts
+forecast_results %>%
+  group_by(ticker) %>%
+  plot_modeltime_forecast(
+    .interactive = FALSE,
+    .facet_ncol = 2
+  )
+
+
+
+################################################################################
+# 12. SAVE RESULTS
+################################################################################
 
 # Calculate RMSE for each ticker (local accuracy)
 global_rmse_by_ticker <- calib_tbl %>% 
@@ -328,19 +341,12 @@ global_rmse_overall <- calib_tbl %>%
 # Combine both RMSE measurements
 global_rmse_results <- bind_rows(global_rmse_by_ticker, global_rmse_overall)
 
+
 # Save RMSE results
-saveRDS(global_rmse_results, "global_model_rmse.rds")
+saveRDS(global_rmse_results, "data/global_model_rmse.rds")
 
 # Save forecast results
-saveRDS(forecast_results, "global_model_forecasts.rds")
+saveRDS(forecast_results, "data/global_model_forecasts.rds")
 
 # Save forecast results
-saveRDS(forecast_results, "global_model_forecasts.rds")
-
-# Visualize forecasts
-forecast_results %>%
-  group_by(ticker) %>%
-  plot_modeltime_forecast(
-    .interactive = FALSE,
-    .facet_ncol = 2
-  )
+saveRDS(forecast_results, "data/global_model_forecasts.rds")

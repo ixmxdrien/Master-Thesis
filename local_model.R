@@ -182,7 +182,7 @@ df_pred_daily_measles <- apply_kalman_filter(df_pred_daily_measles)
 
 
 ################################################################################
-# 6. STATIONARITY CHECK PREDICTION MARKET
+# 7. STATIONARITY CHECK PREDICTION MARKET
 ################################################################################
 
 check_stationarity <- function(df, ticker) {
@@ -263,7 +263,7 @@ head(df_pred_all)
 
 
 ################################################################################
-# 7. MARKET DATA INTEGRATION
+# 8. MARKET DATA INTEGRATION
 ################################################################################
 
 # Load and process ETF data
@@ -282,7 +282,7 @@ df_stock <- bind_rows(df_stock, df_etf)
 
 
 ################################################################################
-# 8. STATIONARITY CHECK STOCKS
+# 9. STATIONARITY CHECK STOCKS
 ################################################################################
 
 
@@ -337,7 +337,7 @@ for (ticker in unique(df_stock$ticker)) {
 }
 
 ################################################################################
-# 9. GRANGER CAUSALITY (PRED TO STOCKS)
+# 10. GRANGER CAUSALITY (PRED TO STOCKS)
 ################################################################################
 
 
@@ -705,9 +705,9 @@ print("Performance Summary:")
 print(performance_summary)
 
 # Sauvegarder les résultats
-saveRDS(local_models, "local_models.rds")
-saveRDS(local_forecasts, "local_forecasts.rds")
-saveRDS(performance_summary, "local_performance_summary.rds")
+saveRDS(local_models, "data/local_models.rds")
+saveRDS(local_forecasts, "data/local_forecasts.rds")
+saveRDS(performance_summary, "data/local_performance_summary.rds")
 
 # Visualisation des résultats
 # 1. Graphique des données réelles et des prévisions sur le train set

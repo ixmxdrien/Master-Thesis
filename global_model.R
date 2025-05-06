@@ -72,11 +72,11 @@ df_eth <- read_csv("analyzing the stock market/eth/kalshi-chart-data-ethmaxy-24d
 df_measles <- read_csv("analyzing the stock market/Measles_cases/kalshi-chart-data-measles-24.csv") %>% mutate(ticker = "Measles")
 df_apple <- read_csv("analyzing the stock market/Apple/kalshi-chart-data-applecar-24dec31.csv") %>% mutate(ticker = "Apple")
 
+
+
 ################################################################################
 # 4. DAILY DATA PROCESSING
 ################################################################################
-
-
 
 # Process daily data for each dataset
 process_df_daily <- function(df, ticker) {
@@ -306,15 +306,41 @@ future_tbl <- data_tbl %>%
   )
 
 # Generate and visualize forecasts
-refit_tbl %>%
+forecast_results <- refit_tbl %>%
   modeltime_forecast(
     new_data = future_tbl,
     actual_data = data_tbl, 
     conf_by_id = TRUE
-  ) %>%
+  )
+
+
+# Calculate RMSE for each ticker (local accuracy)
+global_rmse_by_ticker <- calib_tbl %>% 
+  modeltime_accuracy(acc_by_id = TRUE) %>%
+  select(ticker, global_rmse = rmse)
+
+# Calculate overall RMSE (global accuracy)
+global_rmse_overall <- calib_tbl %>% 
+  modeltime_accuracy(acc_by_id = FALSE) %>%
+  select(global_rmse = rmse) %>%
+  mutate(ticker = "OVERALL")
+
+# Combine both RMSE measurements
+global_rmse_results <- bind_rows(global_rmse_by_ticker, global_rmse_overall)
+
+# Save RMSE results
+saveRDS(global_rmse_results, "global_model_rmse.rds")
+
+# Save forecast results
+saveRDS(forecast_results, "global_model_forecasts.rds")
+
+# Save forecast results
+saveRDS(forecast_results, "global_model_forecasts.rds")
+
+# Visualize forecasts
+forecast_results %>%
   group_by(ticker) %>%
   plot_modeltime_forecast(
     .interactive = FALSE,
     .facet_ncol = 2
   )
-

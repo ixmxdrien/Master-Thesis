@@ -1,15 +1,13 @@
-############################################################################################
-########################################## Projet ##########################################
-############################################################################################
+################################################################################
+# 1. LIBRARY SETUP AND PACKAGE INSTALLATION
+################################################################################
 
-
-# Installer et charger les packages nécessaires
+# Required libraries for time series analysis and modeling
 libraries <- c("tidymodels", "modeltime", "timetk", "tidyverse", "lubridate", "tseries",
                "ggplot2", "caret", "dplyr", "plm", "tidyr", "zoo", "forecast", "KFAS", "reshape2",
                "lmtest", "purrr", "urca", "Metrics")
 
-
-# Verify if it's already installed
+# Install and load required packages
 for (lib in libraries) {
   if (!require(lib, character.only = TRUE)) {
     install.packages(lib, dependencies = TRUE)
@@ -17,226 +15,190 @@ for (lib in libraries) {
   }
 }
 
-#############################################################################################
-##################################### Data Processing #######################################
-#############################################################################################
 
-# CHARGER LES DATASETS
 
-# TESLA
+################################################################################
+# 2. DATA LOADING AND INITIAL PROCESSING
+################################################################################
+
+# Load and process datasets
+# Tesla quarterly data
 df_q1_tesla <- read_csv("analyzing the stock market/tesla_prod/kalshi-chart-data-tesla-24-q1.csv") %>% mutate(quarter = "Q1")
 df_q2_tesla <- read_csv("analyzing the stock market/tesla_prod/kalshi-chart-data-tesla-24-q2.csv") %>% mutate(quarter = "Q2")
 df_q3_tesla <- read_csv("analyzing the stock market/tesla_prod/kalshi-chart-data-tesla-24-q3.csv") %>% mutate(quarter = "Q3")
 df_q4_tesla <- read_csv("analyzing the stock market/tesla_prod/kalshi-chart-data-tesla-24-q4.csv") %>% mutate(quarter = "Q4")
 
-
-# NETFLIX
+# Netflix quarterly data
 df_q1_netflix <- read_csv("analyzing the stock market/netflix_sub/kalshi-chart-data-netflixsubs-24-q1.csv") %>% mutate(quarter = "Q1")
 df_q2_netflix <- read_csv("analyzing the stock market/netflix_sub/kalshi-chart-data-netflixsubs-24-q2.csv") %>% mutate(quarter = "Q2")
 df_q3_netflix <- read_csv("analyzing the stock market/netflix_sub/kalshi-chart-data-netflixsubs-24-q3.csv") %>% mutate(quarter = "Q3")
 df_q4_netflix <- read_csv("analyzing the stock market/netflix_sub/kalshi-chart-data-netflixsubs-24-q4.csv") %>% mutate(quarter = "Q4")
 
-
-# META
+# Meta quarterly data
 df_q1_meta <- read_csv("analyzing the stock market/meta_users/kalshi-chart-data-metadap-24-q1.csv") %>% mutate(quarter = "Q1")
 df_q2_meta <- read_csv("analyzing the stock market/meta_users/kalshi-chart-data-metadap-24-q2.csv") %>% mutate(quarter = "Q2")
 df_q3_meta <- read_csv("analyzing the stock market/meta_users/kalshi-chart-data-metadap-24-q3.csv") %>% mutate(quarter = "Q3")
 
-# GDP
+# GDP quarterly data
 df_q1_gdp <- read_csv("analyzing the stock market/GDP_US/kalshi-chart-data-gdp-24apr25.csv") %>% mutate(quarter = "Q1")
 df_q2_gdp <- read_csv("analyzing the stock market/GDP_US/kalshi-chart-data-gdp-24jul25.csv") %>% mutate(quarter = "Q2")
 df_q3_gdp <- read_csv("analyzing the stock market/GDP_US/kalshi-chart-data-gdp-24oct30.csv") %>% mutate(quarter = "Q3")
 df_q4_gdp <- read_csv("analyzing the stock market/GDP_US/kalshi-chart-data-kxgdp-25jan31.csv") %>% mutate(quarter = "Q4")
 
-# Fusionner les datasets
-df_Tesla <- bind_rows(df_q1_tesla, df_q2_tesla, df_q3_tesla, df_q4_tesla) %>%
-  mutate(ticker = "Tesla")
-df_Netflix <- bind_rows(df_q1_netflix, df_q2_netflix, df_q3_netflix, df_q4_netflix) %>%
-  mutate(ticker = "Netflix")
-df_Meta <- bind_rows(df_q1_meta, df_q2_meta, df_q3_meta) %>%
-  mutate(ticker = "Meta")
-df_GDP <- bind_rows(df_q1_gdp, df_q2_gdp, df_q3_gdp, df_q4_gdp ) %>%
-  mutate(ticker = "GDP")
-
-# Autres datasets
-df_SpaceX <- read_csv("analyzing the stock market/spaceX/kalshi-chart-data-spacexcount-24.csv") %>%
-  mutate(ticker = "SpaceX")
-df_gas_us <- read_csv("analyzing the stock market/price_gas_usa/kalshi-chart-data-aaagasmaxtx-24dec31.csv") %>%
-  mutate(ticker = "Gas US")
-df_wti_oil <- read_csv("analyzing the stock market/wti_oil/kalshi-chart-data-wtimin-24dec31.csv") %>%
-  mutate(ticker = "WTI Oil")
-df_google_sp <- read_csv("analyzing the stock market/Sundar_Pichai_google/kalshi-chart-data-googleceochange.csv") %>%
-  mutate(ticker = "Google")
-df_fed_rate <- read_csv("analyzing the stock market/fed_rate_us/kalshi-chart-data-fedratemin-24dec31.csv") %>%
-  mutate(ticker = "Fed Rate")
-df_btc <- read_csv("analyzing the stock market/btc/kalshi-chart-data-btcmaxy-24dec31.csv") %>%
-  mutate(ticker = "BTC")
-df_us_sc <- read_csv("analyzing the stock market/us_semi_conductor/kalshi-chart-data-semiprodh-24.csv") %>%
-  mutate(ticker = "US Semi Conductor")
-df_infla <- read_csv("analyzing the stock market/inflation/kalshi-chart-data-acpicore-2024.csv") %>%
-  mutate(ticker = "Inflation")
-df_layoffs <- read_csv("analyzing the stock market/big_tech_layoffs/kalshi-chart-data-bigtechlayoff-24dec31.csv") %>%
-  mutate(ticker = "Layoffs")
-df_huricane <- read_csv("analyzing the stock market/number_of_huricane/kalshi-chart-data-hurctot-24dec01.csv") %>%
-  mutate(ticker = "Hurricanes")
-df_eth <- read_csv("analyzing the stock market/eth/kalshi-chart-data-ethmaxy-24dec31.csv") %>%
-  mutate(ticker = "ETH")
-df_measles <- read_csv("analyzing the stock market/Measles_cases/kalshi-chart-data-measles-24.csv") %>%
-  mutate(ticker = "Measles")
-df_apple <- read_csv("analyzing the stock market/Apple/kalshi-chart-data-applecar-24dec31.csv") %>%
-  mutate(ticker = "Apple")
-
-# Visualisation des head des datasets
-head(df_Tesla)
-head(df_Netflix)
-head(df_Meta)
-head(df_GDP)
-head(df_SpaceX)
-head(df_gas_us)
-head(df_wti_oil)
-head(df_google_sp)
-head(df_fed_rate)
-head(df_btc)
-head(df_us_sc)
-head(df_infla)
-head(df_layoffs)
-head(df_huricane)
-head(df_eth)
-head(df_measles)
-head(df_apple)
 
 
-# Conversion de la colonne Timestamp en type Date pour chaque dataset
-# Fonction pour transformer un df avec colonne 'Timestamp' et 'Value'
+################################################################################
+# 3. DATA COMBINATION AND TRANSFORMATION
+################################################################################
+
+# Combine quarterly datasets
+df_Tesla <- bind_rows(df_q1_tesla, df_q2_tesla, df_q3_tesla, df_q4_tesla) %>% mutate(ticker = "Tesla")
+df_Netflix <- bind_rows(df_q1_netflix, df_q2_netflix, df_q3_netflix, df_q4_netflix) %>% mutate(ticker = "Netflix")
+df_Meta <- bind_rows(df_q1_meta, df_q2_meta, df_q3_meta) %>% mutate(ticker = "Meta")
+df_GDP <- bind_rows(df_q1_gdp, df_q2_gdp, df_q3_gdp, df_q4_gdp) %>% mutate(ticker = "GDP")
+
+# Load additional market datasets
+df_SpaceX <- read_csv("analyzing the stock market/spaceX/kalshi-chart-data-spacexcount-24.csv") %>% mutate(ticker = "SpaceX")
+df_gas_us <- read_csv("analyzing the stock market/price_gas_usa/kalshi-chart-data-aaagasmaxtx-24dec31.csv") %>% mutate(ticker = "Gas US")
+df_wti_oil <- read_csv("analyzing the stock market/wti_oil/kalshi-chart-data-wtimin-24dec31.csv") %>% mutate(ticker = "WTI Oil")
+df_google_sp <- read_csv("analyzing the stock market/Sundar_Pichai_google/kalshi-chart-data-googleceochange.csv") %>% mutate(ticker = "Google")
+df_fed_rate <- read_csv("analyzing the stock market/fed_rate_us/kalshi-chart-data-fedratemin-24dec31.csv") %>% mutate(ticker = "Fed Rate")
+df_btc <- read_csv("analyzing the stock market/btc/kalshi-chart-data-btcmaxy-24dec31.csv") %>% mutate(ticker = "BTC")
+df_us_sc <- read_csv("analyzing the stock market/us_semi_conductor/kalshi-chart-data-semiprodh-24.csv") %>% mutate(ticker = "US Semi Conductor")
+df_infla <- read_csv("analyzing the stock market/inflation/kalshi-chart-data-acpicore-2024.csv") %>% mutate(ticker = "Inflation")
+df_layoffs <- read_csv("analyzing the stock market/big_tech_layoffs/kalshi-chart-data-bigtechlayoff-24dec31.csv") %>% mutate(ticker = "Layoffs")
+df_huricane <- read_csv("analyzing the stock market/number_of_huricane/kalshi-chart-data-hurctot-24dec01.csv") %>% mutate(ticker = "Hurricanes")
+df_eth <- read_csv("analyzing the stock market/eth/kalshi-chart-data-ethmaxy-24dec31.csv") %>% mutate(ticker = "ETH")
+df_measles <- read_csv("analyzing the stock market/Measles_cases/kalshi-chart-data-measles-24.csv") %>% mutate(ticker = "Measles")
+df_apple <- read_csv("analyzing the stock market/Apple/kalshi-chart-data-applecar-24dec31.csv") %>% mutate(ticker = "Apple")
+
+
+
+
+################################################################################
+# 4. DAILY DATA PROCESSING
+################################################################################
+
+
+
+# Process daily data for each dataset
 process_df_daily <- function(df, ticker) {
   df %>%
     mutate(date = as.Date(Timestamp)) %>% 
-    mutate(id = ticker) %>%      # Conversion en date
+    mutate(id = ticker) %>%
     group_by(date, id) %>%
-    summarise(pred_daily = mean(Value, na.rm = TRUE)) # Moyenne journalière
+    summarise(pred_daily = mean(Value, na.rm = TRUE))
 }
 
-df_pred_daily_TESLA    <- process_df_daily(df_Tesla, "TESLA")
-df_pred_daily_NETFLIX  <- process_df_daily(df_Netflix, "NETFLIX")
-df_pred_daily_META     <- process_df_daily(df_Meta, "META")
-df_pred_daily_GDP      <- process_df_daily(df_GDP, "GDP")
-df_pred_daily_SpaceX   <- process_df_daily(df_SpaceX, "SpaceX")
-df_pred_daily_gas_us   <- process_df_daily(df_gas_us, "gas_us")
-df_pred_daily_wti_oil  <- process_df_daily(df_wti_oil, "wti_oil")
-df_pred_daily_btc      <- process_df_daily(df_btc, "btc")
-df_pred_daily_us_sc    <- process_df_daily(df_us_sc, "us_sc")
-df_pred_daily_infla    <- process_df_daily(df_infla, "infla")
+df_pred_daily_TESLA <- process_df_daily(df_Tesla, "TESLA")
+df_pred_daily_NETFLIX <- process_df_daily(df_Netflix, "NETFLIX")
+df_pred_daily_META <- process_df_daily(df_Meta, "META")
+df_pred_daily_GDP <- process_df_daily(df_GDP, "GDP")
+df_pred_daily_SpaceX <- process_df_daily(df_SpaceX, "SpaceX")
+df_pred_daily_gas_us <- process_df_daily(df_gas_us, "gas_us")
+df_pred_daily_wti_oil <- process_df_daily(df_wti_oil, "wti_oil")
+df_pred_daily_btc <- process_df_daily(df_btc, "btc")
+df_pred_daily_us_sc <- process_df_daily(df_us_sc, "us_sc")
+df_pred_daily_infla <- process_df_daily(df_infla, "infla")
 df_pred_daily_huricane <- process_df_daily(df_huricane, "huricane")
-df_pred_daily_eth      <- process_df_daily(df_eth, "eth")
-df_pred_daily_measles  <- process_df_daily(df_measles, "measles")
+df_pred_daily_eth <- process_df_daily(df_eth, "eth")
+df_pred_daily_measles <- process_df_daily(df_measles, "measles")
 
-
+# Process forecast data
 process_df_daily_forecast <- function(df, ticker) {
   df %>%
     mutate(
-      date = as.Date(Timestamp),             # Conversion en date
-      Forecast = as.numeric(gsub("%", "", Forecast)),  # Enlever le % et convertir en numeric
-      id = ticker                        # Ajouter une colonne 'ticker'
+      date = as.Date(Timestamp),
+      Forecast = as.numeric(gsub("%", "", Forecast)),
+      id = ticker
     ) %>%
-    group_by(date, id) %>%               # Groupement par date et ticker
-    summarise(pred_daily = mean(Forecast, na.rm = TRUE)) %>%  # Moyenne journalière
-    ungroup()                                # Annuler la mise en groupe
+    group_by(date, id) %>%
+    summarise(pred_daily = mean(Forecast, na.rm = TRUE)) %>%
+    ungroup()
 }
 
-
-df_pred_daily_google   <- process_df_daily_forecast(df_google_sp, "Google")
-df_pred_daily_fed      <- process_df_daily_forecast(df_fed_rate, "Fed Rate")
-df_pred_daily_layoffs  <- process_df_daily_forecast(df_layoffs, "Layoffs")
-df_pred_daily_apple    <- process_df_daily_forecast(df_apple, "Apple")
-
-
-head(df_pred_daily_google)
+df_pred_daily_google <- process_df_daily_forecast(df_google_sp, "Google")
+df_pred_daily_fed <- process_df_daily_forecast(df_fed_rate, "Fed Rate")
+df_pred_daily_layoffs <- process_df_daily_forecast(df_layoffs, "Layoffs")
+df_pred_daily_apple <- process_df_daily_forecast(df_apple, "Apple")
 
 
-# Créer une séquence complète de dates pour chaque dataset
+
+################################################################################
+# 5. DATE SEQUENCE AND DATA COMPLETION
+################################################################################
+
+# Create complete date sequences for each dataset
 complete_dates_TESLA <- tibble(date = seq(min(df_pred_daily_TESLA$date, na.rm = TRUE),
                                           max(df_pred_daily_TESLA$date, na.rm = TRUE), by = "day"))
-
 complete_dates_NETFLIX <- tibble(date = seq(min(df_pred_daily_NETFLIX$date, na.rm = TRUE),
                                             max(df_pred_daily_NETFLIX$date, na.rm = TRUE), by = "day"))
-
 complete_dates_META <- tibble(date = seq(min(df_pred_daily_META$date, na.rm = TRUE),
                                          max(df_pred_daily_META$date, na.rm = TRUE), by = "day"))
-
 complete_dates_GDP <- tibble(date = seq(min(df_pred_daily_GDP$date, na.rm = TRUE),
-                                         max(df_pred_daily_GDP$date, na.rm = TRUE), by = "day"))
+                                        max(df_pred_daily_GDP$date, na.rm = TRUE), by = "day"))
 
+# Join with original datasets
+df_pred_daily_TESLA <- complete_dates_TESLA %>% left_join(df_pred_daily_TESLA, by = "date")
+df_pred_daily_NETFLIX <- complete_dates_NETFLIX %>% left_join(df_pred_daily_NETFLIX, by = "date")
+df_pred_daily_META <- complete_dates_META %>% left_join(df_pred_daily_META, by = "date")
+df_pred_daily_GDP <- complete_dates_GDP %>% left_join(df_pred_daily_GDP, by = "date")
 
-# Joindre avec les datasets d'origine
-df_pred_daily_TESLA <- complete_dates_TESLA %>%
-  left_join(df_pred_daily_TESLA, by = "date")
-
-df_pred_daily_NETFLIX <- complete_dates_NETFLIX %>%
-  left_join(df_pred_daily_NETFLIX, by = "date")
-
-df_pred_daily_META <- complete_dates_META %>%
-  left_join(df_pred_daily_META, by = "date")
-
-df_pred_daily_GDP <- complete_dates_GDP %>%
-  left_join(df_pred_daily_GDP, by = "date")
-  
-  
   
 
-# Fonction pour appliquer le filtre de Kalman et remplir les valeurs manquantes
+
+################################################################################
+# 6. KALMAN FILTER IMPLEMENTATION
+################################################################################
+
+# Apply Kalman filter to fill missing values
 apply_kalman_filter <- function(df) {
-  # Convertir les données en série temporelle avec la bonne fréquence (365 jours)
-  ts_data <- ts(df$pred_daily, frequency = 365, start = c(2024, 1))  # ajuster le début de la série selon les données
-  
-  # Créer un modèle d'état pour le filtre de Kalman avec tendance linéaire
-  model <- SSModel(ts_data ~ -1 + SSMtrend(degree = 1, Q = 1))  # Modèle avec tendance (SSMtrend)
-  
-  # Appliquer le filtre de Kalman pour estimer les valeurs manquantes
+  ts_data <- ts(df$pred_daily, frequency = 365, start = c(2024, 1))
+  model <- SSModel(ts_data ~ -1 + SSMtrend(degree = 1, Q = 1))
   kalman_fit <- KFS(model, simplify = TRUE)
-  
-  # Extraire les valeurs filtrées (prévisions de Kalman)
   kalman_values <- kalman_fit$a
-  
-  # Vérifier si la longueur des valeurs filtrées est égale à celle du dataframe
   if (length(kalman_values) != nrow(df)) {
-    # Ajuster la longueur en coupant la dernière ligne si nécessaire
     kalman_values <- kalman_values[1:nrow(df)]
   }
-  
-  # Mettre à jour la colonne 'pred_daily' avec les valeurs filtrées
   df$pred_daily <- ifelse(is.na(df$pred_daily), kalman_values, df$pred_daily)
-  
   df$id[is.na(df$id)] <- unique(df$id[!is.na(df$id)])[1]
-  
   return(df)
 }
 
-# Appliquer cette fonction à la série de données META
+# Apply Kalman filter to main datasets
 df_pred_daily_TESLA <- apply_kalman_filter(df_pred_daily_TESLA)
 df_pred_daily_NETFLIX <- apply_kalman_filter(df_pred_daily_NETFLIX)
 df_pred_daily_META <- apply_kalman_filter(df_pred_daily_META)
 df_pred_daily_GDP <- apply_kalman_filter(df_pred_daily_GDP)
+df_pred_daily_SpaceX <- apply_kalman_filter(df_pred_daily_SpaceX)
+df_pred_daily_gas_us <- apply_kalman_filter(df_pred_daily_gas_us)
+df_pred_daily_wti_oil <- apply_kalman_filter(df_pred_daily_wti_oil)
+df_pred_daily_btc <- apply_kalman_filter(df_pred_daily_btc)
+df_pred_daily_us_sc <- apply_kalman_filter(df_pred_daily_us_sc)
+df_pred_daily_infla <- apply_kalman_filter(df_pred_daily_infla)
+df_pred_daily_huricane <- apply_kalman_filter(df_pred_daily_huricane)
+df_pred_daily_eth <- apply_kalman_filter(df_pred_daily_eth)
+df_pred_daily_measles <- apply_kalman_filter(df_pred_daily_measles)
 
+
+################################################################################
+# 6. STATIONARITY CHECK PREDICTION MARKET
+################################################################################
 
 check_stationarity <- function(df, ticker) {
-  # Vérifier s'il y a des NA et les supprimer avant le test ADF
+
   df_clean <- df[!is.na(df$pred_daily), ]
   
-  # Tester la stationnarité avec le test de Dickey-Fuller (ADF)
   adf_result <- adf.test(df_clean$pred_daily, alternative = "stationary")
   
-  # Afficher les résultats du test de stationnarité
   cat(paste("ADF test for", ticker, "p-value:", adf_result$p.value, "\n"))
   
-  # Si la p-value est supérieure à 0.05, la série n'est pas stationnaire
   if (adf_result$p.value > 0.05) {
     cat(paste(ticker, "is not stationary. Applying first differencing...\n"))
-    df$pred_daily <- c(NA, diff(df$pred_daily, differences = 1))  # Ajoute NA au début pour garder la même longueur
+    df$pred_daily <- c(NA, diff(df$pred_daily, differences = 1))  
     
-    # Vérifier s'il y a des NA et les supprimer avant le test ADF
     df_clean <- df[!is.na(df$pred_daily), ]
     
-    # Refaire le test après la première différenciation
     adf_result_diff1 <- adf.test(df_clean$pred_daily, alternative = "stationary")
     cat(paste("ADF test after first differencing for", ticker, "p-value:", adf_result_diff1$p.value, "\n"))
     
@@ -300,40 +262,37 @@ df_pred_all <- bind_rows(
 head(df_pred_all)
 
 
-# Charger les données ETF et supprimer les lignes avec des NA
-df_etf <- read_csv("ETF/combined_returns_2024.csv") %>%
-  drop_na()  # Supprime toutes les lignes contenant au moins un NA
+################################################################################
+# 7. MARKET DATA INTEGRATION
+################################################################################
 
+# Load and process ETF data
+df_etf <- read_csv("ETF/combined_returns_2024.csv") %>% drop_na()
 
-# Charger le fichier complet des actions
+# Load and process stock data
 df_stock <- read_csv("analyzing the stock market/tilt_stocks_2024.csv") %>%
   select(-`...1`) %>%
-  filter(ticker %in% c("TSLA", "NFLX", "META", "GOOG", "COIN", "INTC", "JPM", "XOM", "AAPL", "BAC", "TOT", "PFE", "JNJ", "MSFT", "AMZN", "WMT", "NVDA")) %>%
-  mutate(date = as.Date(date))  # Convertir en format date
+  filter(ticker %in% c("TSLA", "NFLX", "META", "GOOG", "COIN", "INTC", "JPM", "XOM", "AAPL", 
+                       "BAC", "TOT", "PFE", "JNJ", "MSFT", "AMZN", "WMT", "NVDA")) %>%
+  mutate(date = as.Date(date))
 
-
-# Vérifier les premières lignes du DataFrame filtré
-head(df_stock)
-
-# Fusionner les deux DataFrame
+# Combine stock and ETF data
 df_stock <- bind_rows(df_stock, df_etf)
 
-# Afficher le DataFrame final
-print(df_stock)
 
+
+################################################################################
+# 8. STATIONARITY CHECK STOCKS
+################################################################################
 
 
 check_stationarity <- function(df, ticker) {
-  # Vérifier s'il y a des NA et les supprimer avant le test ADF
   df_clean <- df[!is.na(df$returns), ]
   
-  # Tester la stationnarité avec le test de Dickey-Fuller (ADF)
   adf_result <- adf.test(df_clean$returns, alternative = "stationary")
   
-  # Afficher les résultats du test de stationnarité
   cat(paste("ADF test for", ticker, "p-value:", adf_result$p.value, "\n"))
   
-  # Si la p-value est supérieure à 0.05, la série n'est pas stationnaire
   if (adf_result$p.value > 0.05) {
     cat(paste(ticker, "is not stationary. Applying first differencing...\n"))
     df$returns <- c(NA, diff(df$returns, differences = 1))  # Applique la première différenciation
@@ -377,10 +336,11 @@ for (ticker in unique(df_stock$ticker)) {
   df_stock <- check_stationarity(df_stock, ticker)
 }
 
+################################################################################
+# 9. GRANGER CAUSALITY (PRED TO STOCKS)
+################################################################################
 
 
-
-# granger causality 
 granger_causality_test <- function(pred_series, stock_series, max_lag = 5, pred_name = "Prediction Market", stock_name = "Stock") {
   library(lmtest)
   
@@ -504,282 +464,349 @@ df_combined <- df_combined %>%
 
 
 
-correlation_tbl <- df_combined %>%
-  group_by(ticker, id) %>%  # ticker = action, id = prédiction Kalshi
-  summarise(
-    correlation = cor(pred_daily, returns, use = "complete.obs"),
-    n_obs = n(),
-    .groups = "drop"
-  ) %>%
-  arrange(desc(abs(correlation)))  # Trier par force de la corrélation
+#############################################################################################
+################################# ARIMA(X) Panel Data Modeling ##############################
+#############################################################################################
 
-# Affichage
-print(correlation_tbl)
+# Fonction pour ajuster le modèle local
+fit_local_model <- function(ticker_data, granger_results, prediction_markets) {
+  # Vérifier si les données sont valides
+  if (nrow(ticker_data) == 0) {
+    stop("Aucune donnée disponible pour ce ticker")
+  }
+  
+  current_ticker <- unique(ticker_data$ticker)
+  
+  # Afficher les résultats du test de Granger pour ce ticker
+  cat(sprintf("\nRésultats du test de Granger pour %s:\n", current_ticker))
+  granger_for_ticker <- granger_results %>%
+    filter(Stock == current_ticker)
+  print(granger_for_ticker)
+  
+  # Extraire les variables exogènes significatives pour ce ticker
+  exog_vars <- granger_results %>%
+    filter(Stock == current_ticker,
+           result == "Granger-causes",
+           p_value < 0.05) %>%
+    pull(Prediction_Market)
+  
+  cat(sprintf("Variables exogènes significatives trouvées pour %s: %s\n", 
+              current_ticker, 
+              if(length(exog_vars) > 0) paste(exog_vars, collapse = ", ") else "aucune"))
+  
+  # Préparer les données pour le modèle
+  ts_data <- ts(ticker_data$returns, frequency = 365)
+  
+  # Si des variables exogènes sont significatives, utiliser ARIMAX
+  if (length(exog_vars) > 0) {
+    # Préparer la matrice des variables exogènes
+    exog_matrix <- prediction_markets %>%
+      filter(id %in% exog_vars) %>%
+      select(date, id, pred_daily) %>%
+      # Remplir les valeurs manquantes avec la dernière valeur connue
+      group_by(id) %>%
+      arrange(date) %>%
+      fill(pred_daily, .direction = "down") %>%
+      ungroup() %>%
+      pivot_wider(names_from = id, values_from = pred_daily) %>%
+      arrange(date)
+    
+    # Afficher les dimensions de la matrice exogène
+    cat(sprintf("Dimensions de la matrice exogène pour %s: %d x %d\n", 
+                current_ticker, nrow(exog_matrix), ncol(exog_matrix)))
+    
+    # Aligner les dates avec les données principales
+    exog_matrix <- exog_matrix %>%
+      filter(date %in% ticker_data$date) %>%
+      arrange(date)
+    
+    # Afficher les dimensions après alignement
+    cat(sprintf("Dimensions après alignement pour %s: %d x %d\n", 
+                current_ticker, nrow(exog_matrix), ncol(exog_matrix)))
+    
+    # Vérifier si la matrice exogène est valide
+    if (nrow(exog_matrix) == 0 || ncol(exog_matrix) <= 1) {
+      cat(sprintf("Pas de données exogènes valides pour %s, utilisation d'ARIMA simple\n", current_ticker))
+      model <- auto.arima(ts_data)
+    } else {
+      # Vérifier l'alignement des dates
+      if (!all(exog_matrix$date == ticker_data$date)) {
+        warning("Les dates ne sont pas parfaitement alignées, ajustement nécessaire")
+        # Réindexer les données pour assurer l'alignement
+        exog_matrix <- exog_matrix %>%
+          right_join(ticker_data %>% select(date), by = "date") %>%
+          arrange(date) %>%
+          # Remplir les valeurs manquantes après l'alignement
+          fill(-date, .direction = "down")
+      }
+      
+      # Supprimer la colonne date et convertir en matrice
+      exog_matrix <- exog_matrix %>%
+        select(-date) %>%
+        as.matrix()
+      
+      # Vérifier les dimensions
+      if (nrow(exog_matrix) != length(ts_data)) {
+        warning(sprintf("Dimensions non correspondantes: ts_data=%d, exog_matrix=%d", 
+                       length(ts_data), nrow(exog_matrix)))
+        # Ajuster la longueur de ts_data pour correspondre à exog_matrix
+        ts_data <- ts(ticker_data$returns[1:nrow(exog_matrix)], frequency = 365)
+      }
+      
+      # Vérifier si la matrice exogène contient des NA
+      if (any(is.na(exog_matrix))) {
+        warning("NA détectés dans les variables exogènes, utilisation d'ARIMA simple")
+        model <- auto.arima(ts_data)
+      } else {
+        # Vérifier si la matrice exogène est vide ou ne contient que des colonnes constantes
+        if (ncol(exog_matrix) == 0 || all(apply(exog_matrix, 2, function(x) length(unique(x)) == 1))) {
+          warning("Variables exogènes non informatives, utilisation d'ARIMA simple")
+          model <- auto.arima(ts_data)
+        } else {
+          # Ajuster le modèle ARIMAX
+          tryCatch({
+            model <- auto.arima(ts_data, xreg = exog_matrix)
+          }, error = function(e) {
+            warning(paste("Erreur lors de l'ajustement ARIMAX:", e$message, "\nUtilisation d'ARIMA simple"))
+            model <- auto.arima(ts_data)
+          })
+        }
+      }
+    }
+  } else {
+    # Sinon, utiliser ARIMA simple
+    cat(sprintf("Aucune variable exogène significative pour %s, utilisation d'ARIMA simple\n", current_ticker))
+    model <- auto.arima(ts_data)
+  }
+  
+  return(model)
+}
 
+# Fonction pour évaluer les performances du modèle
+evaluate_model <- function(model, test_data, ticker) {
+  # Vérifier si les données de test sont valides
+  if (nrow(test_data) == 0) {
+    stop("Aucune donnée de test disponible")
+  }
+  
+  # Générer les prévisions
+  if (inherits(model, "ARIMA")) {
+    # Pour ARIMA simple
+    forecast_values <- forecast(model, h = nrow(test_data))
+  } else {
+    # Pour ARIMAX
+    exog_test <- test_data %>%
+      select(matches("pred_daily")) %>%
+      as.matrix()
+    
+    # Vérifier les dimensions
+    if (nrow(exog_test) != nrow(test_data)) {
+      warning("Dimensions non correspondantes dans les données de test")
+      # Ajuster la longueur des prévisions
+      h <- min(nrow(exog_test), nrow(test_data))
+      forecast_values <- forecast(model, xreg = exog_test[1:h,], h = h)
+    } else {
+      forecast_values <- forecast(model, xreg = exog_test, h = nrow(test_data))
+    }
+  }
+  
+  # Calculer le RMSE
+  rmse <- sqrt(mean((test_data$returns - forecast_values$mean)^2))
+  
+  return(list(
+    ticker = ticker,
+    rmse = rmse,
+    forecast = forecast_values$mean
+  ))
+}
 
-
-ggplot(correlation_tbl, aes(x = reorder(paste(ticker, id, sep = "-"), correlation), y = correlation, fill = correlation)) +
-  geom_col() +
-  coord_flip() +
-  labs(title = "Corrélation entre actions et marchés de prédiction",
-       x = "Paire (Action - Marché Kalshi)",
-       y = "Corrélation") +
-  scale_fill_gradient2(low = "red", high = "blue", mid = "white", midpoint = 0) +
-  theme_minimal()
-
-
-correlation_tbl <- correlation_tbl %>%
-  mutate(correlation = as.numeric(correlation)) %>%
-  filter(abs(correlation) > 0.05)
-
-
-
-corr_matrix <- df_combined %>%
-  filter(!is.na(pred_daily), !is.na(returns)) %>%
-  group_by(ticker, id) %>%
-  summarise(correlation = cor(pred_daily, returns, use = "complete.obs"), .groups = "drop") %>%
-  pivot_wider(names_from = ticker, values_from = correlation)
-
-corr_matrix_long <- melt(corr_matrix, id.vars = "id")
-
-ggplot(corr_matrix_long, aes(x = variable, y = id, fill = value)) +
-  geom_tile() +
-  scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0) +
-  theme_minimal() +
-  labs(title = "Heatmap des corrélations", x = "Action", y = "Prédiction Kalshi", fill = "Corrélation")
-
-
-
-# Créer un tableau simplifié avec 'id', 'date' et 'value'
-data_tbl <- df_combined %>%
-  select(date, ticker, value = returns, id, pred_daily)  # 'returns' comme valeur à prédire
-
-# Vérifier les premières lignes du tableau
-head(data_tbl)
-
-
-data_tbl %>%
+# Préparation des données pour la modélisation
+# Créer les splits train/test pour chaque ticker
+splits_list <- df_combined %>%
   group_by(ticker) %>%
-  plot_time_series(
-    date, value, .interactive = FALSE, .facet_ncol = 3
-  )
+  group_map(~ {
+    # S'assurer que les données sont triées par date
+    .x <- .x %>% arrange(date)
+    time_series_split(
+      .x,
+      assess = "3 months",
+      cumulative = TRUE
+    )
+  })
 
+# Initialiser les listes pour stocker les résultats
+local_models <- list()
+local_forecasts <- list()
+local_rmse <- list()
+train_forecasts <- list()  # Nouvelle liste pour stocker les prévisions sur le train set
 
-splits <- data_tbl %>% 
-  time_series_split(
-    assess     = "3 months", 
-    cumulative = TRUE
-  )
+# Boucle sur chaque ticker pour ajuster les modèles locaux
+for (i in seq_along(unique(df_combined$ticker))) {
+  ticker <- unique(df_combined$ticker)[i]
+  cat(sprintf("\nProcessing %s...\n", ticker))
+  
+  # Extraire les données pour ce ticker
+  ticker_data <- df_combined %>% 
+    filter(ticker == !!ticker) %>%
+    arrange(date)  # S'assurer que les données sont triées par date
+  
+  # Vérifier si nous avons assez de données
+  if (nrow(ticker_data) < 50) {
+    cat(sprintf("Pas assez de données pour %s, skipping...\n", ticker))
+    next
+  }
+  
+  tryCatch({
+    # Ajuster le modèle local
+    local_model <- fit_local_model(
+      ticker_data = ticker_data,
+      granger_results = df_results_sorted,
+      prediction_markets = df_pred_all
+    )
+    
+    # Évaluer le modèle
+    evaluation <- evaluate_model(
+      model = local_model,
+      test_data = testing(splits_list[[i]]),
+      ticker = ticker
+    )
+    
+    # Générer les prévisions sur le train set
+    train_data <- training(splits_list[[i]])
+    if (inherits(local_model, "ARIMA")) {
+      train_forecast <- fitted(local_model)
+    } else {
+      exog_train <- train_data %>%
+        select(matches("pred_daily")) %>%
+        as.matrix()
+      train_forecast <- fitted(local_model)
+    }
+    
+    # Stocker les résultats
+    local_models[[ticker]] <- local_model
+    local_forecasts[[ticker]] <- evaluation$forecast
+    local_rmse[[ticker]] <- evaluation$rmse
+    train_forecasts[[ticker]] <- train_forecast
+    
+    cat(sprintf("Modèle ajusté avec succès pour %s\n", ticker))
+  }, error = function(e) {
+    cat(sprintf("Erreur lors du traitement de %s: %s\n", ticker, e$message))
+  })
+}
 
-
-splits
-
-# Créer la recette de prétraitement pour le modèle XGBoost
-rec_obj_xgb <- recipe(value ~ ., training(splits)) %>%
-  step_dummy(id) %>%
-  step_normalize(all_numeric(), -all_outcomes()) %>%
-  step_timeseries_signature(date) %>%
-  step_rm(date) %>%
-  step_zv(all_predictors()) %>%
-  step_dummy(all_nominal_predictors(), one_hot = TRUE)
-
-summary(prep(rec_obj_xgb))
-
-
-#############################################################################################
-################################# XGBoost Panel Data Modeling ##############################
-#############################################################################################
-
-# Création du modèle avec XGBoost et la recette de prétraitement
-#wflw_xgb <- workflow() %>%
-#  add_model(
-#    boost_tree(mode = "regression", trees = 1000, tree_depth = 6, learn_rate = 0.01) %>% set_engine("xgboost")
-#  ) %>%
-#  add_recipe(rec_obj_xgb) %>%
-#  fit(train_data)
-
-wflw_xgb <- workflow() %>%
-  add_model(
-    boost_tree("regression") %>% set_engine("xgboost")
-  ) %>%
-  add_recipe(rec_obj_xgb) %>%
-  fit(training(splits))
-
-wflw_xgb
-
-
-
-model_tbl <- modeltime_table(
-  wflw_xgb
+# Créer un tableau récapitulatif des performances
+performance_summary <- data.frame(
+  ticker = names(local_rmse),
+  local_rmse = unlist(local_rmse)
 )
 
-model_tbl
+# Afficher le résumé des performances
+print("Performance Summary:")
+print(performance_summary)
 
+# Sauvegarder les résultats
+saveRDS(local_models, "local_models.rds")
+saveRDS(local_forecasts, "local_forecasts.rds")
+saveRDS(performance_summary, "local_performance_summary.rds")
 
-
-calib_tbl <- model_tbl %>%
-  modeltime_calibrate(
-    new_data = testing(splits), 
-    id       = "ticker"
+# Visualisation des résultats
+# 1. Graphique des données réelles et des prévisions sur le train set
+plot_train_results <- function(ticker) {
+  train_data <- training(splits_list[[which(unique(df_combined$ticker) == ticker)]])
+  test_data <- testing(splits_list[[which(unique(df_combined$ticker) == ticker)]])
+  
+  # Créer un data frame pour les prévisions du train set
+  train_forecast_df <- data.frame(
+    date = train_data$date[1:length(train_forecasts[[ticker]])],
+    forecast = train_forecasts[[ticker]]
   )
+  
+  # Calculer les limites de l'axe y pour éviter les valeurs manquantes
+  y_min <- min(c(train_data$returns, test_data$returns, train_forecast_df$forecast), na.rm = TRUE)
+  y_max <- max(c(train_data$returns, test_data$returns, train_forecast_df$forecast), na.rm = TRUE)
+  
+  p <- ggplot() +
+    geom_line(data = train_data, aes(x = date, y = returns, color = "Données réelles (train)"), linewidth = 0.8) +
+    geom_line(data = train_forecast_df, 
+              aes(x = date, y = forecast, color = "Prévisions (train)"), linewidth = 0.8) +
+    geom_line(data = test_data, aes(x = date, y = returns, color = "Données réelles (test)"), linewidth = 0.8) +
+    labs(title = paste("Résultats du modèle pour", ticker),
+         x = "Date",
+         y = "Rendements",
+         color = "Légende") +
+    theme_minimal() +
+    theme(legend.position = "bottom") +
+    ylim(y_min, y_max)  # Définir les limites de l'axe y
+  
+  return(p)
+}
 
-calib_tbl
+# 2. Graphique des prévisions futures
+plot_future_forecasts <- function(ticker) {
+  train_data <- training(splits_list[[which(unique(df_combined$ticker) == ticker)]])
+  test_data <- testing(splits_list[[which(unique(df_combined$ticker) == ticker)]])
+  
+  # Générer les prévisions futures
+  future_dates <- seq(max(test_data$date), by = "day", length.out = 60)
+  if (inherits(local_models[[ticker]], "ARIMA")) {
+    future_forecast <- forecast(local_models[[ticker]], h = 60)
+  } else {
+    # Pour ARIMAX, nous devons préparer les variables exogènes futures
+    last_exog <- test_data %>%
+      select(matches("pred_daily")) %>%
+      tail(1) %>%
+      as.matrix()
+    future_forecast <- forecast(local_models[[ticker]], 
+                              xreg = matrix(rep(last_exog, 60), ncol = ncol(last_exog), byrow = TRUE), 
+                              h = 60)
+  }
+  
+  # Calculer les limites de l'axe y
+  y_min <- min(c(train_data$returns, test_data$returns, future_forecast$mean), na.rm = TRUE)
+  y_max <- max(c(train_data$returns, test_data$returns, future_forecast$mean), na.rm = TRUE)
+  
+  p <- ggplot() +
+    geom_line(data = train_data, aes(x = date, y = returns, color = "Données réelles (train)"), linewidth = 0.8) +
+    geom_line(data = test_data, aes(x = date, y = returns, color = "Données réelles (test)"), linewidth = 0.8) +
+    geom_line(data = data.frame(date = future_dates, forecast = future_forecast$mean), 
+              aes(x = date, y = forecast, color = "Prévisions futures"), linewidth = 0.8) +
+    geom_ribbon(data = data.frame(date = future_dates, 
+                                 lower = future_forecast$lower[,2], 
+                                 upper = future_forecast$upper[,2]),
+                aes(x = date, ymin = lower, ymax = upper), alpha = 0.2) +
+    labs(title = paste("Prévisions futures pour", ticker),
+         x = "Date",
+         y = "Rendements",
+         color = "Légende") +
+    theme_minimal() +
+    theme(legend.position = "bottom") +
+    ylim(y_min, y_max)  # Définir les limites de l'axe y
+  
+  return(p)
+}
 
+# Créer les graphiques pour chaque ticker
+library(gridExtra)
+plots_list <- list()
+future_plots_list <- list()
 
+for (ticker in names(local_models)) {
+  plots_list[[ticker]] <- plot_train_results(ticker)
+  future_plots_list[[ticker]] <- plot_future_forecasts(ticker)
+}
 
-calib_tbl %>% 
-  modeltime_accuracy(acc_by_id = FALSE) %>% 
-  table_modeltime_accuracy(.interactive = FALSE)
+# Combiner les graphiques en une seule figure
+n_cols <- 3
+n_rows <- ceiling(length(plots_list) / n_cols)
 
+# Sauvegarder les graphiques
+pdf("local_models_results.pdf", width = 15, height = 10)
+grid.arrange(grobs = plots_list, ncol = n_cols)
+dev.off()
 
-calib_tbl %>% 
-  modeltime_accuracy(acc_by_id = TRUE) %>% 
-  table_modeltime_accuracy(.interactive = FALSE)
-
-
-calib_tbl %>%
-  modeltime_forecast(
-    new_data    = testing(splits),
-    actual_data = data_tbl,
-    conf_by_id  = TRUE
-  ) %>%
-  group_by(ticker) %>%
-  plot_modeltime_forecast(
-    .facet_ncol  = 3,
-    .interactive = FALSE
-  )
-
-
-refit_tbl <- calib_tbl %>%
-  modeltime_refit(data = data_tbl)
-
-refit_tbl
-
-
-future_tbl <- data_tbl %>%
-  group_by(id) %>%
-  future_frame(.length_out = 52, .date_var = date ,.bind_data = FALSE)
-
-future_tbl
-
-
-# Créer la recette de prétraitement pour le modèle XGBoost
-rec_obj_xgb <- recipe(value ~ ., training(splits)) %>%
-  step_dummy(id) %>%
-  step_normalize(all_numeric(), -all_outcomes()) %>%
-  step_timeseries_signature(date) %>%
-  step_rm(date) %>%
-  step_zv(all_predictors()) %>%
-  step_dummy(all_nominal_predictors(), one_hot = TRUE)
-
-summary(prep(rec_obj_xgb))
-
-
-
-
-#############################################################################################
-################################# XGBoost Panel Data Modeling ##############################
-#############################################################################################
-
-# Création du modèle avec XGBoost et la recette de prétraitement
-#wflw_xgb <- workflow() %>%
-#  add_model(
-#    boost_tree(mode = "regression", trees = 1000, tree_depth = 6, learn_rate = 0.01) %>% set_engine("xgboost")
-#  ) %>%
-#  add_recipe(rec_obj_xgb) %>%
-#  fit(train_data)
-
-wflw_xgb <- workflow() %>%
-  add_model(
-    boost_tree("regression") %>% set_engine("xgboost")
-  ) %>%
-  add_recipe(rec_obj_xgb) %>%
-  fit(training(splits))
-
-wflw_xgb
-
-
-
-model_tbl <- modeltime_table(
-  wflw_xgb
-)
-
-model_tbl
-
-
-
-calib_tbl <- model_tbl %>%
-  modeltime_calibrate(
-    new_data = testing(splits), 
-    id       = "ticker"
-  )
-
-calib_tbl
-
-
-
-calib_tbl %>% 
-  modeltime_accuracy(acc_by_id = FALSE) %>% 
-  table_modeltime_accuracy(.interactive = FALSE)
-
-
-calib_tbl %>% 
-  modeltime_accuracy(acc_by_id = TRUE) %>% 
-  table_modeltime_accuracy(.interactive = FALSE)
-
-
-calib_tbl %>%
-  modeltime_forecast(
-    new_data    = testing(splits),
-    actual_data = data_tbl,
-    conf_by_id  = TRUE
-  ) %>%
-  group_by(ticker) %>%
-  plot_modeltime_forecast(
-    .facet_ncol  = 3,
-    .interactive = FALSE
-  )
-
-
-refit_tbl <- calib_tbl %>%
-  modeltime_refit(data = data_tbl)
-
-refit_tbl
-
-data_tbl <- data_tbl %>%
-  distinct(ticker, date, .keep_all = TRUE)
-
-future_tbl <- data_tbl %>%
-  group_by(ticker) %>%
-  future_frame(.length_out = 52, .date_var = date, .bind_data = FALSE) %>%
-  mutate(id = NA,          # Assigner 'ticker' à 'id'
-       pred_daily = NA)   
-
-future_tbl
-
-
-
-refit_tbl %>%
-  modeltime_forecast(
-    new_data    = future_tbl,
-    actual_data = data_tbl, 
-    conf_by_id  = TRUE
-  ) %>%
-  group_by(ticker) %>%
-  plot_modeltime_forecast(
-    .interactive = F,
-    .facet_ncol  = 2
-  )
-
-
-#############################################################################################
-################################# Comparaison des modèles ##################################
-#############################################################################################
-
-
-
-
-
+pdf("local_models_future_forecasts.pdf", width = 15, height = 10)
+grid.arrange(grobs = future_plots_list, ncol = n_cols)
+dev.off()
 
 
 

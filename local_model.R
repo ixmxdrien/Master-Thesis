@@ -5,7 +5,7 @@
 # Required libraries for time series analysis and modeling
 libraries <- c("tidymodels", "modeltime", "timetk", "tidyverse", "lubridate", "tseries",
                "ggplot2", "caret", "dplyr", "plm", "tidyr", "zoo", "forecast", "KFAS", "reshape2",
-               "lmtest", "purrr", "urca", "Metrics")
+               "lmtest", "purrr", "urca", "Metrics", "strucchange", "moments")
 
 # Install and load required packages
 for (lib in libraries) {
@@ -295,7 +295,188 @@ for (ticker in unique(df_stock$ticker)) {
 }
 
 ################################################################################
-# 10. GRANGER CAUSALITY (PRED TO STOCKS)
+# 10. CROSS-CORRELATION ANALYSIS
+################################################################################
+
+# Function to compute cross-correlation between two time series
+compute_cross_correlation <- function(stock_series, pred_series, max_lag = 20) {
+  # Merge series on date
+  df_combined <- inner_join(stock_series, pred_series, by = "date", suffix = c("_stock", "_pred"))
+  df_clean <- df_combined %>% drop_na(pred_daily_stock, pred_daily_pred)
+  
+  # Check data sufficiency
+  if (nrow(df_clean) < (max_lag + 1)) {
+    return(data.frame(
+      lag = NA,
+      correlation = NA,
+      stock = unique(stock_series$ticker)[1],
+      prediction_market = unique(pred_series$id)[1]
+    ))
+  }
+  
+  # Compute cross-correlation
+  ccf_result <- ccf(df_clean$pred_daily_stock, df_clean$pred_daily_pred, 
+                   lag.max = max_lag, plot = FALSE)
+  
+  # Create result dataframe
+  result_df <- data.frame(
+    lag = ccf_result$lag,
+    correlation = ccf_result$acf,
+    stock = unique(stock_series$ticker)[1],
+    prediction_market = unique(pred_series$id)[1]
+  )
+  
+  return(result_df)
+}
+
+# Prepare data for cross-correlation analysis
+stock_series_list <- lapply(unique(df_stock$ticker), function(tk) {
+  df_stock %>% filter(ticker == tk) %>%
+    select(date, ticker, pred_daily = returns)
+})
+names(stock_series_list) <- unique(df_stock$ticker)
+
+prediction_series_list <- lapply(unique(df_pred_all$id), function(id) {
+  df_pred_all %>% filter(id == !!id) %>%
+    select(date, id, pred_daily)
+})
+names(prediction_series_list) <- unique(df_pred_all$id)
+
+# Compute cross-correlations for all combinations
+cross_corr_results <- list()
+for (stock_name in names(stock_series_list)) {
+  for (pred_name in names(prediction_series_list)) {
+    result <- compute_cross_correlation(
+      stock_series = stock_series_list[[stock_name]],
+      pred_series = prediction_series_list[[pred_name]]
+    )
+    cross_corr_results[[length(cross_corr_results) + 1]] <- result
+  }
+}
+
+# Combine all results
+df_cross_corr <- bind_rows(cross_corr_results)
+
+# Find significant correlations (using 95% confidence interval)
+df_cross_corr_significant <- df_cross_corr %>%
+  filter(abs(correlation) > 1.96/sqrt(nrow(df_stock))) %>%
+  arrange(desc(abs(correlation)))
+
+# Display top correlations
+cat("\nTop 10 strongest cross-correlations:\n")
+print(head(df_cross_corr_significant, 10))
+
+# Save results
+write_csv(df_cross_corr_significant, "data/csv/cross_correlation_results.csv")
+
+################################################################################
+# 11. DIAGNOSTIC TESTS
+################################################################################
+
+# Function to perform diagnostic tests on a time series
+perform_diagnostic_tests <- function(series, series_name) {
+  # Create a list to store results
+  results <- list()
+  
+  # 1. Test for Normality (Shapiro-Wilk test)
+  shapiro_test <- shapiro.test(series)
+  results$normality <- data.frame(
+    test = "Shapiro-Wilk",
+    p_value = shapiro_test$p.value,
+    is_normal = shapiro_test$p.value > 0.05
+  )
+  
+  # 2. Test for Heteroskedasticity (Breusch-Pagan test)
+  # Create a simple linear model for the test
+  lm_model <- lm(series ~ seq_along(series))
+  bp_test <- bptest(lm_model)
+  results$heteroskedasticity <- data.frame(
+    test = "Breusch-Pagan",
+    p_value = bp_test$p.value,
+    is_homoskedastic = bp_test$p.value > 0.05
+  )
+  
+  # 3. Test for Structural Breaks (Chow test)
+  # Split the series in half
+  n <- length(series)
+  mid_point <- floor(n/2)
+  chow_test <- sctest(series ~ seq_along(series), type = "Chow", point = mid_point)
+  results$structural_break <- data.frame(
+    test = "Chow",
+    p_value = chow_test$p.value,
+    has_break = chow_test$p.value < 0.05
+  )
+  
+  # 4. Outlier Detection (using IQR method)
+  q1 <- quantile(series, 0.25)
+  q3 <- quantile(series, 0.75)
+  iqr <- q3 - q1
+  lower_bound <- q1 - 1.5 * iqr
+  upper_bound <- q3 + 1.5 * iqr
+  outliers <- sum(series < lower_bound | series > upper_bound)
+  
+  results$outliers <- data.frame(
+    test = "IQR",
+    n_outliers = outliers,
+    percentage = (outliers / length(series)) * 100
+  )
+  
+  # Add series name to all results
+  for (i in seq_along(results)) {
+    results[[i]]$series_name <- series_name
+  }
+  
+  return(results)
+}
+
+# Perform diagnostic tests on stock returns
+stock_diagnostics <- list()
+for (ticker in unique(df_stock$ticker)) {
+  stock_data <- df_stock %>% 
+    filter(ticker == !!ticker) %>%
+    pull(returns)
+  
+  stock_diagnostics[[ticker]] <- perform_diagnostic_tests(stock_data, ticker)
+}
+
+# Perform diagnostic tests on prediction market data
+pred_diagnostics <- list()
+for (pred_market in unique(df_pred_all$id)) {
+  pred_data <- df_pred_all %>% 
+    filter(id == !!pred_market) %>%
+    pull(pred_daily)
+  
+  pred_diagnostics[[pred_market]] <- perform_diagnostic_tests(pred_data, pred_market)
+}
+
+# Combine results
+combine_diagnostic_results <- function(diagnostics_list) {
+  all_results <- list()
+  for (i in seq_along(diagnostics_list)) {
+    for (j in seq_along(diagnostics_list[[i]])) {
+      all_results[[length(all_results) + 1]] <- diagnostics_list[[i]][[j]]
+    }
+  }
+  return(bind_rows(all_results))
+}
+
+# Combine and save results
+stock_diagnostic_results <- combine_diagnostic_results(stock_diagnostics)
+pred_diagnostic_results <- combine_diagnostic_results(pred_diagnostics)
+
+# Save results
+write_csv(stock_diagnostic_results, "data/csv/stock_diagnostic_results.csv")
+write_csv(pred_diagnostic_results, "data/csv/prediction_market_diagnostic_results.csv")
+
+# Display summary of results
+cat("\nSummary of Diagnostic Tests for Stocks:\n")
+print(summary(stock_diagnostic_results))
+
+cat("\nSummary of Diagnostic Tests for Prediction Markets:\n")
+print(summary(pred_diagnostic_results))
+
+################################################################################
+# 12. GRANGER CAUSALITY (PRED TO STOCKS)
 ################################################################################
 
 # Function to perform Granger causality test
@@ -395,7 +576,7 @@ df_combined <- df_pred_all %>%
   filter(!is.na(returns))
 
 ################################################################################
-# 11. ARIMA(X) PANEL DATA MODELING
+# 13. ARIMA(X) PANEL DATA MODELING
 ################################################################################
 
 # Function to fit local model
@@ -621,7 +802,103 @@ performance_summary <- data.frame(
 )
 
 ################################################################################
-# 12. ERROR ANALYSIS BY TIME POINT
+# 14. RESIDUAL ANALYSIS
+################################################################################
+
+# Function to analyze model residuals
+analyze_residuals <- function(model, ticker) {
+  # Extract residuals
+  residuals <- residuals(model)
+  
+  # Create a list to store results
+  results <- list()
+  
+  # 1. Test for Normality (Shapiro-Wilk)
+  shapiro_test <- shapiro.test(residuals)
+  results$normality <- data.frame(
+    test = "Shapiro-Wilk",
+    p_value = shapiro_test$p.value,
+    is_normal = shapiro_test$p.value > 0.05
+  )
+  
+  # 2. Test for Autocorrelation (Ljung-Box)
+  lb_test <- Box.test(residuals, type = "Ljung-Box")
+  results$autocorrelation <- data.frame(
+    test = "Ljung-Box",
+    p_value = lb_test$p.value,
+    is_white_noise = lb_test$p.value > 0.05
+  )
+  
+  # 3. Test for Heteroskedasticity (Breusch-Pagan)
+  lm_model <- lm(residuals ~ seq_along(residuals))
+  bp_test <- bptest(lm_model)
+  results$heteroskedasticity <- data.frame(
+    test = "Breusch-Pagan",
+    p_value = bp_test$p.value,
+    is_homoskedastic = bp_test$p.value > 0.05
+  )
+  
+  # 4. Basic statistics
+  results$statistics <- data.frame(
+    mean = mean(residuals),
+    sd = sd(residuals),
+    skewness = skewness(residuals),
+    kurtosis = kurtosis(residuals)
+  )
+  
+  # Add ticker to all results
+  for (i in seq_along(results)) {
+    results[[i]]$ticker <- ticker
+  }
+  
+  return(results)
+}
+
+# Analyze residuals for all models
+residual_analysis <- list()
+for (ticker in names(local_models)) {
+  cat(sprintf("\nAnalyzing residuals for %s...\n", ticker))
+  residual_analysis[[ticker]] <- analyze_residuals(local_models[[ticker]], ticker)
+}
+
+# Combine results
+combine_residual_results <- function(analysis_list) {
+  all_results <- list()
+  for (i in seq_along(analysis_list)) {
+    for (j in seq_along(analysis_list[[i]])) {
+      all_results[[length(all_results) + 1]] <- analysis_list[[i]][[j]]
+    }
+  }
+  return(bind_rows(all_results))
+}
+
+# Combine and save results
+residual_results <- combine_residual_results(residual_analysis)
+
+# Save results
+write_csv(residual_results, "data/csv/residual_analysis_results.csv")
+
+# Display summary of results
+cat("\nSummary of Residual Analysis:\n")
+print(summary(residual_results))
+
+# Create residual plots for each model
+for (ticker in names(local_models)) {
+  # Create plot
+  p <- ggplot(data.frame(residuals = residuals(local_models[[ticker]]))) +
+    geom_histogram(aes(x = residuals), bins = 30) +
+    geom_density(aes(x = residuals), color = "red") +
+    labs(title = paste("Residual Distribution for", ticker),
+         x = "Residuals",
+         y = "Count") +
+    theme_minimal()
+  
+  # Save plot
+  ggsave(paste0("plots/residuals_", ticker, ".png"), p, width = 10, height = 6)
+}
+
+################################################################################
+# 15. ERROR ANALYSIS BY TIME POINT
 ################################################################################
 
 # Create forecast error data frame
@@ -670,7 +947,7 @@ saveRDS(local_forecasts, "data/rds/local_forecasts.rds")
 saveRDS(performance_summary, "data/rds/local_performance_summary.rds")
 
 ################################################################################
-# 13. VISUALIZATION FUNCTIONS
+# 16. VISUALIZATION FUNCTIONS
 ################################################################################
 
 # Function to plot training results

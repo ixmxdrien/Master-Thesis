@@ -1,0 +1,16 @@
+# R specific files
+.Rproj
+.Rapp.history
+.RData
+.Rhistory
+.rds
+.Rproj.user
+.thesis_git.Rproj
+
+# Generated documents
+results.pdf
+forecasts.pdf
+
+# Environment and system files
+.env
+.DS_Store

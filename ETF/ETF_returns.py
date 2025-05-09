@@ -12,7 +12,7 @@ etfs = {
     "CAC 40": "^FCHI",
     "S&P 500": "^GSPC", #SPY
     "MSCI World": "URTH",
-    "Nasdaq ": "^IXIC"
+    "Nasdaq ": "QQQM"
 }
 
 # Dates

@@ -9,10 +9,10 @@ os.makedirs(output_dir, exist_ok=True)
 
 # Liste des ETF
 etfs = {
-    "CAC 40": "^FCHI",
-    "S&P 500": "^GSPC", #SPY
-    "MSCI World": "URTH",
-    "Nasdaq ": "QQQM"
+    "CAC 40": "CAC.PA",
+    "S&P 500": "SPY",
+    "MSCI World": "IWDA.AS",
+    "Nasdaq 100": "QQQ"
 }
 
 # Dates

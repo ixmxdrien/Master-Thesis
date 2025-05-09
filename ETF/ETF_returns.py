@@ -1,6 +1,7 @@
 import yfinance as yf
 import pandas as pd
 import os
+import time
 
 # Créer le dossier "ETF" s'il n'existe pas
 output_dir = "ETF"
@@ -8,10 +9,10 @@ os.makedirs(output_dir, exist_ok=True)
 
 # Liste des ETF
 etfs = {
-    "CAC 40": "CAC.PA",
-    "S&P 500": "SPY",
-    "MSCI World": "IWDA.AS",
-    "Nasdaq 100": "QQQ"
+    "CAC 40": "^FCHI",
+    "S&P 500": "^GSPC", #SPY
+    "MSCI World": "URTH",
+    "Nasdaq ": "^IXIC"
 }
 
 # Dates
@@ -24,6 +25,7 @@ all_returns = []
 for name, ticker in etfs.items():
     # Récupération des données
     data = yf.download(ticker, start=start_date, end=end_date, interval='1d')
+    time.sleep(2) 
     
     # Si MultiIndex de colonnes, on aplatit
     if isinstance(data.columns, pd.MultiIndex):
@@ -46,3 +48,4 @@ combined_filepath = os.path.join(output_dir, "combined_returns_2024.csv")
 combined_returns.to_csv(combined_filepath, index=False)
 
 print(f"Fichier combiné sauvegardé dans {combined_filepath} ✅")
+

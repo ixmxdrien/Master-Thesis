@@ -5,7 +5,7 @@
 # Required libraries for time series analysis and modeling
 libraries <- c("tidymodels", "modeltime", "timetk", "tidyverse", "lubridate", "tseries",
                "ggplot2", "caret", "dplyr", "plm", "tidyr", "zoo", "forecast", "KFAS", "reshape2",
-               "lmtest", "purrr", "urca", "Metrics", "strucchange", "moments")
+               "lmtest", "purrr", "urca", "Metrics", "strucchange", "moments", "kableExtra")
 
 # Install and load required packages
 for (lib in libraries) {
@@ -167,6 +167,8 @@ df_pred_daily_infla <- apply_kalman_filter(df_pred_daily_infla)
 df_pred_daily_huricane <- apply_kalman_filter(df_pred_daily_huricane)
 df_pred_daily_eth <- apply_kalman_filter(df_pred_daily_eth)
 df_pred_daily_measles <- apply_kalman_filter(df_pred_daily_measles)
+df_pred_daily_apple <- apply_kalman_filter(df_pred_daily_apple)
+
 
 ################################################################################
 # 7. STATIONARITY CHECK PREDICTION MARKET
@@ -175,6 +177,7 @@ df_pred_daily_measles <- apply_kalman_filter(df_pred_daily_measles)
 # Function to check and handle stationarity
 check_stationarity <- function(df, ticker) {
   df_clean <- df[!is.na(df$pred_daily), ]
+  diff_count <- 0
   
   # Perform ADF test
   adf_result <- adf.test(df_clean$pred_daily, alternative = "stationary")
@@ -184,6 +187,7 @@ check_stationarity <- function(df, ticker) {
   if (adf_result$p.value > 0.05) {
     cat(paste(ticker, "is not stationary. Applying first differencing...\n"))
     df$pred_daily <- c(NA, diff(df$pred_daily, differences = 1))
+    diff_count <- 1
     
     # Check stationarity after first differencing
     df_clean <- df[!is.na(df$pred_daily), ]
@@ -194,6 +198,7 @@ check_stationarity <- function(df, ticker) {
     if (adf_result_diff1$p.value > 0.05) {
       cat(paste(ticker, "is still not stationary. Applying second differencing...\n"))
       df$pred_daily <- c(NA, diff(df$pred_daily, differences = 1))
+      diff_count <- 2
       
       df_clean <- df[!is.na(df$pred_daily), ]
       adf_result_diff2 <- adf.test(df_clean$pred_daily, alternative = "stationary")
@@ -205,24 +210,64 @@ check_stationarity <- function(df, ticker) {
     cat(paste(ticker, "is stationary.\n"))
   }
   
-  return(df)
+  return(list(df = df, diff_count = diff_count))
 }
 
-# Apply stationarity check to all datasets
-df_pred_daily_TESLA <- check_stationarity(df_pred_daily_TESLA, "TESLA") %>% na.omit()
-df_pred_daily_NETFLIX <- check_stationarity(df_pred_daily_NETFLIX, "NETFLIX") %>% na.omit()
-df_pred_daily_META <- check_stationarity(df_pred_daily_META, "META") %>% na.omit()
-df_pred_daily_GDP <- check_stationarity(df_pred_daily_GDP, "GDP") %>% na.omit()
-df_pred_daily_SpaceX <- check_stationarity(df_pred_daily_SpaceX, "SpaceX") %>% na.omit()
-df_pred_daily_gas_us <- check_stationarity(df_pred_daily_gas_us, "Gas US") %>% na.omit()
-df_pred_daily_wti_oil <- check_stationarity(df_pred_daily_wti_oil, "WTI Oil") %>% na.omit()
-df_pred_daily_btc <- check_stationarity(df_pred_daily_btc, "BTC") %>% na.omit()
-df_pred_daily_us_sc <- check_stationarity(df_pred_daily_us_sc, "US Semi Conductor") %>% na.omit()
-df_pred_daily_infla <- check_stationarity(df_pred_daily_infla, "Inflation") %>% na.omit()
-df_pred_daily_huricane <- check_stationarity(df_pred_daily_huricane, "Hurricanes") %>% na.omit()
-df_pred_daily_eth <- check_stationarity(df_pred_daily_eth, "ETH") %>% na.omit()
-df_pred_daily_measles <- check_stationarity(df_pred_daily_measles, "Measles") %>% na.omit()
-df_pred_daily_apple <- check_stationarity(df_pred_daily_apple, "Apple") %>% na.omit()
+# Create a list to store results
+stationarity_results <- list()
+
+# Apply stationarity check to all datasets and store results
+datasets <- list(
+  list(df = df_pred_daily_TESLA, name = "TESLA"),
+  list(df = df_pred_daily_NETFLIX, name = "NETFLIX"),
+  list(df = df_pred_daily_META, name = "META"),
+  list(df = df_pred_daily_GDP, name = "GDP"),
+  list(df = df_pred_daily_SpaceX, name = "SpaceX"),
+  list(df = df_pred_daily_gas_us, name = "Gas US"),
+  list(df = df_pred_daily_wti_oil, name = "WTI Oil"),
+  list(df = df_pred_daily_btc, name = "BTC"),
+  list(df = df_pred_daily_us_sc, name = "US Semi Conductor"),
+  list(df = df_pred_daily_infla, name = "Inflation"),
+  list(df = df_pred_daily_huricane, name = "Hurricanes"),
+  list(df = df_pred_daily_eth, name = "ETH"),
+  list(df = df_pred_daily_measles, name = "Measles"),
+  list(df = df_pred_daily_apple, name = "Apple")
+)
+
+
+
+# Process each dataset and store results
+for (dataset in datasets) {
+  result <- check_stationarity(dataset$df, dataset$name)
+  stationarity_results[[dataset$name]] <- result$diff_count
+  
+  # Update the original dataframe
+  assign(paste0("df_pred_daily_", dataset$name), result$df %>% na.omit())
+}
+
+# Create summary table
+stationarity_summary <- data.frame(
+  `Pred Market` = names(stationarity_results),
+  Number.of.Differentiations = unlist(stationarity_results)
+) %>%
+  arrange(desc(Number.of.Differentiations))
+
+# Rename column for display
+names(stationarity_summary)[2] <- "Number of differentiations"
+names(stationarity_summary)[1] <- "Pred Market"
+
+# Display summary table with kable
+print(kable(stationarity_summary, 
+            format = "html", 
+            caption = "Stationarity Analysis Summary") %>%
+      kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+      row_spec(which(stationarity_summary$`Number of differentiations` == 2), background = "#ffe6e6") %>%
+      row_spec(which(stationarity_summary$`Number of differentiations` == 1), background = "#fff2e6") %>%
+      row_spec(which(stationarity_summary$`Number of differentiations` == 0), background = "#e6ffe6"))
+
+# Save the summary table
+save_kable(stationarity_summary, "data/stationarity_summary.html")
+
 
 # Combine all prediction datasets
 df_pred_all <- bind_rows(
@@ -237,7 +282,9 @@ df_pred_all <- bind_rows(
 ################################################################################
 
 # Load and process ETF data
-df_etf <- read_csv("ETF/combined_returns_2024.csv") %>% drop_na()
+df_etf <- read_csv("ETF/combined_returns_2024.csv") %>% 
+  drop_na() %>%
+  filter(ticker != "CAC.PA")
 
 # Load and process stock data
 df_stock <- read_csv("data/stocks_and_pred/tilt_stocks_2024.csv") %>%
@@ -564,6 +611,32 @@ for (i in seq_along(prediction_markets)) {
 df_results <- bind_rows(results)
 df_results_sorted <- df_results %>% arrange(p_value)
 
+# Create summary table for Granger causality
+granger_summary <- df_results_sorted %>%
+  filter(!is.na(p_value) & p_value < 0.10) %>%  # Keep results up to 10% significance
+  select(
+    `Pred Market` = Prediction_Market,
+    Stock = Stock,
+    `P-value` = p_value,
+    Result = result
+  ) %>%
+  mutate(
+    `P-value` = round(`P-value`, 4),
+    Result = ifelse(Result == "Granger-causes", "Granger-causes", "Does not Granger-cause")
+  ) %>%
+  arrange(`P-value`)
+
+# Display Granger causality summary table
+print(kable(granger_summary, 
+            format = "html", 
+            caption = "Granger Causality Analysis Summary (p < 0.10)") %>%
+      kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+      row_spec(which(granger_summary$Result == "Granger-causes"), background = "#e6ffe6") %>%
+      row_spec(which(granger_summary$Result == "Does not Granger-cause"), background = "#ffe6e6"))
+
+# Save the summary table
+save_kable(granger_summary, "data/granger_causality_summary.html")
+
 # Display significant results
 print(df_results_sorted %>% filter(!is.na(p_value) & p_value < 0.15))
 
@@ -581,14 +654,14 @@ df_combined <- df_pred_all %>%
 
 # Create walk-forward time series split
 splits <- df_combined %>%
-  arrange(date) %>%  # Ensure data is ordered by date
+  arrange(date) %>%
   time_series_cv(
     date_var   = date,
-    initial    = "150 days",     # ~5 months
-    assess     = "75 days",      # ~2.5 months
-    skip       = "75 days",      # Step of 2.5 months
-    cumulative = TRUE,          # Keep all previous data in training
-    slice_limit = 2             # Limit to 2 folds
+    initial    = "150 days",     # ~5 mois
+    assess     = "75 days",      # ~2.5 mois
+    skip       = "75 days",      # Pas de 2.5 mois
+    cumulative = TRUE,          # Garde toutes les données précédentes
+    slice_limit = 2             # Limite à 2 folds
   )
 
 # Print splits to verify
@@ -606,50 +679,49 @@ test_data_2 <- assessment(second_split)
 
 # Function to evaluate model performance
 evaluate_model <- function(model, test_data, ticker) {
-  # Validate test data
-  if (nrow(test_data) == 0) {
-    stop("No test data available")
-  }
+  # S'assurer que les données de test sont triées par date
+  test_data <- test_data %>% arrange(date)
   
-  # Generate forecasts
-  if (inherits(model, "ARIMA")) {
-    # For ARIMA models, generate forecast for the entire test period
-    forecast_values <- forecast(model, h = nrow(test_data))
-    forecast_means <- forecast_values$mean
-  } else {
-    # For ARIMAX models, we need to handle exogenous variables
+  # Pour les modèles ARIMAX, préparer les variables exogènes
+  if (inherits(model, "ARIMA") && !is.null(model$xreg)) {
+    # Utiliser seulement les variables exogènes jusqu'à la date de test
     exog_test <- test_data %>%
       select(matches("pred_daily")) %>%
       as.matrix()
     
-    # Print dimensions for debugging
-    cat(sprintf("Test data rows: %d, Exog matrix rows: %d\n", 
-                nrow(test_data), nrow(exog_test)))
-    
-    # Ensure we have the right number of forecasts
-    if (nrow(exog_test) != nrow(test_data)) {
-      warning(sprintf("Dimension mismatch: test_data=%d, exog_matrix=%d", 
-                     nrow(test_data), nrow(exog_test)))
-      h <- min(nrow(exog_test), nrow(test_data))
-      forecast_values <- forecast(model, xreg = exog_test[1:h,], h = h)
-    } else {
-      forecast_values <- forecast(model, xreg = exog_test, h = nrow(test_data))
+    # Vérifier les dimensions
+    if (ncol(exog_test) != ncol(model$xreg)) {
+      stop(sprintf("Dimension mismatch: model has %d regressors but test data has %d", 
+                  ncol(model$xreg), ncol(exog_test)))
     }
-    forecast_means <- forecast_values$mean
+    
+    # Générer les prévisions une par une pour éviter le look-ahead
+    forecast_values <- numeric(nrow(test_data))
+    for (i in 1:nrow(test_data)) {
+      if (i == 1) {
+        forecast_values[i] <- forecast(model, xreg = exog_test[i,,drop=FALSE], h = 1)$mean
+      } else {
+        # Mettre à jour le modèle avec les nouvelles données
+        updated_model <- Arima(
+          c(model$x, test_data$returns[1:(i-1)]),
+          model = model$arma,
+          xreg = exog_test[1:i,,drop=FALSE]
+        )
+        forecast_values[i] <- forecast(updated_model, xreg = exog_test[i,,drop=FALSE], h = 1)$mean
+      }
+    }
+  } else {
+    # Pour les modèles ARIMA simples
+    forecast_values <- forecast(model, h = nrow(test_data))$mean
   }
   
-  # Print forecast information for debugging
-  cat(sprintf("Number of forecasts generated: %d\n", length(forecast_means)))
-  cat(sprintf("First few forecast values: %s\n", 
-              paste(head(forecast_means, 3), collapse = ", ")))
-  
-  # Calculate RMSE
-  rmse <- sqrt(mean((test_data$returns - forecast_means)^2))
+  # Calculer le RMSE
+  rmse <- sqrt(mean((test_data$returns - forecast_values)^2))
   
   return(list(
     ticker = ticker,
     rmse = rmse,
-    forecast = forecast_means
+    forecast = forecast_values
   ))
 }
 
@@ -691,6 +763,7 @@ fit_local_model_fold <- function(ticker_data, granger_results, prediction_market
       select(date, id, pred_daily) %>%
       group_by(id) %>%
       arrange(date) %>%
+      filter(date <= max(ticker_data$date)) %>%
       fill(pred_daily, .direction = "down") %>%
       ungroup() %>%
       pivot_wider(names_from = id, values_from = pred_daily) %>%
@@ -829,6 +902,10 @@ train_forecasts_fold2 <- list()
 # Fit models for each ticker in both folds
 for (ticker in unique(df_combined$ticker)) {
   cat(sprintf("\nProcessing %s...\n", ticker))
+  cat(sprintf("Training period: %s to %s\n", 
+              min(train_data_1$date), max(train_data_1$date)))
+  cat(sprintf("Test period: %s to %s\n", 
+              min(test_data_1$date), max(test_data_1$date)))
   
   # Extract ticker data for both folds
   ticker_data_fold1 <- train_data_1 %>% 
@@ -1088,6 +1165,24 @@ plot_future_forecasts_fold <- function(ticker, fold_number) {
     ylim(y_min, y_max)
   
   return(p)
+}
+
+check_look_ahead <- function(train_data, test_data, exog_data) {
+  # Vérifier que les dates sont correctement ordonnées
+  train_max_date <- max(train_data$date)
+  test_min_date <- min(test_data$date)
+  
+  if (train_max_date >= test_min_date) {
+    stop("Look-ahead bias detected: Training data overlaps with test data")
+  }
+  
+  # Vérifier les variables exogènes
+  exog_max_date <- max(exog_data$date)
+  if (exog_max_date > test_min_date) {
+    warning("Potential look-ahead bias in exogenous variables")
+  }
+  
+  return(TRUE)
 }
 
 

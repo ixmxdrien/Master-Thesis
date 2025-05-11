@@ -131,6 +131,59 @@ fold2_summary <- comparison_df %>%
   )
 print(fold2_summary)
 
+# Create separate comparison tables for Fold 1 and Fold 2
+fold1_table <- comparison_df %>%
+  mutate(
+    `Better Model` = case_when(
+      local_rmse_fold1 < global_rmse_fold1 ~ "Local",
+      local_rmse_fold1 > global_rmse_fold1 ~ "Global",
+      TRUE ~ "Equal"
+    )
+  ) %>%
+  select(
+    Ticker = ticker,
+    `Global RMSE` = global_rmse_fold1,
+    `Local RMSE` = local_rmse_fold1,
+    `Better Model`
+  ) %>%
+  mutate(
+    across(where(is.numeric), ~round(., 4))
+  )
+
+fold2_table <- comparison_df %>%
+  mutate(
+    `Better Model` = case_when(
+      local_rmse_fold2 < global_rmse_fold2 ~ "Local",
+      local_rmse_fold2 > global_rmse_fold2 ~ "Global",
+      TRUE ~ "Equal"
+    )
+  ) %>%
+  select(
+    Ticker = ticker,
+    `Global RMSE` = global_rmse_fold2,
+    `Local RMSE` = local_rmse_fold2,
+    `Better Model`
+  ) %>%
+  mutate(
+    across(where(is.numeric), ~round(., 4))
+  )
+
+# Display Fold 1 comparison table
+print(kable(fold1_table, format = "html", caption = "Model Comparison - Fold 1") %>%
+      kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+      row_spec(which(fold1_table$`Better Model` == "Local"), background = "#e6ffe6") %>%
+      row_spec(which(fold1_table$`Better Model` == "Global"), background = "#ffe6e6"))
+
+# Display Fold 2 comparison table
+print(kable(fold2_table, format = "html", caption = "Model Comparison - Fold 2") %>%
+      kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+      row_spec(which(fold2_table$`Better Model` == "Local"), background = "#e6ffe6") %>%
+      row_spec(which(fold2_table$`Better Model` == "Global"), background = "#ffe6e6"))
+
+# Save separate comparison tables
+save_kable(fold1_table, "data/fold1_comparison_table.html")
+save_kable(fold2_table, "data/fold2_comparison_table.html")
+
 ################################################################################
 # 4. DIEBOLD-MARIANO TEST IMPLEMENTATION
 ################################################################################

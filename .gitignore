@@ -10,6 +10,7 @@
 # Generated documents
 results.pdf
 forecasts.pdf
+/graph/*
 
 # Environment and system files
 .env

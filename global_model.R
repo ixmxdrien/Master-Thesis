@@ -162,7 +162,9 @@ df_pred_daily_GDP <- apply_kalman_filter(df_pred_daily_GDP)
 ################################################################################
 
 # Load and process ETF data
-df_etf <- read_csv("ETF/combined_returns_2024.csv") %>% drop_na()
+df_etf <- read_csv("ETF/combined_returns_2024.csv") %>% 
+  drop_na() %>%
+  filter(ticker != "CAC.PA")
 
 # Load and process stock data
 df_stock <- read_csv("data/stocks_and_pred/tilt_stocks_2024.csv") %>%

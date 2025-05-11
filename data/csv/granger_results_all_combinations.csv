@@ -1,281 +1,267 @@
 Prediction_Market,Stock,p_value,result
+GDP,IWDA.AS,0.004846178537182879,Granger-causes
 Netflix,PFE,0.004913580775396324,Granger-causes
 Meta,JNJ,0.00612669152383462,Granger-causes
 GDP,XOM,0.007287114411374504,Granger-causes
-GDP,^GSPC,0.009329042102842999,Granger-causes
-BTC,PFE,0.014836109167895796,Granger-causes
-GDP,^IXIC,0.019071948821376847,Granger-causes
+Hurricanes,GOOG,0.008116624688799944,Granger-causes
+GDP,SPY,0.009037390121234232,Granger-causes
 GDP,JPM,0.020022383701158927,Granger-causes
-Measles,NFLX,0.02244269638834072,Granger-causes
-GDP,URTH,0.023736216092820225,Granger-causes
-Hurricanes,TSLA,0.02637072845944713,Granger-causes
+GDP,QQQ,0.020179679062194374,Granger-causes
+Measles,NFLX,0.02028018733875695,Granger-causes
 GDP,COIN,0.02846889956123946,Granger-causes
-US Semi Conductor,TSLA,0.036972145891335725,Granger-causes
-Hurricanes,GOOG,0.037277961784075435,Granger-causes
-SpaceX,^FCHI,0.04499546589747959,Granger-causes
-US Semi Conductor,AMZN,0.050191912077447255,Does not Granger-cause
+Hurricanes,TSLA,0.0485334144414736,Granger-causes
 Meta,PFE,0.05303044784235143,Does not Granger-cause
 Apple,WMT,0.055100676435177055,Does not Granger-cause
-Gas US,XOM,0.059199849860747576,Does not Granger-cause
+ETH,MSFT,0.05742341640320469,Does not Granger-cause
 Tesla,TSLA,0.06303823403873009,Does not Granger-cause
-ETH,MSFT,0.07045861947012932,Does not Granger-cause
 GDP,META,0.07462963108246236,Does not Granger-cause
-BTC,BAC,0.07487902934283666,Does not Granger-cause
 GDP,INTC,0.08028032342008948,Does not Granger-cause
-Hurricanes,JNJ,0.08316513882979609,Does not Granger-cause
 SpaceX,TSLA,0.08670176675875012,Does not Granger-cause
-BTC,JNJ,0.1063638004674648,Does not Granger-cause
+BTC,SPY,0.08716129933160756,Does not Granger-cause
 Tesla,PFE,0.11414516377129179,Does not Granger-cause
-BTC,XOM,0.12634518588474078,Does not Granger-cause
+BTC,IWDA.AS,0.11779494989833925,Does not Granger-cause
 WTI Oil,WMT,0.12635585088896378,Does not Granger-cause
-Hurricanes,XOM,0.12845970439062898,Does not Granger-cause
+BTC,PFE,0.12777084432664113,Does not Granger-cause
 GDP,AAPL,0.12973003528538643,Does not Granger-cause
-Measles,META,0.14027647312381228,Does not Granger-cause
-Hurricanes,AMZN,0.15012578067823865,Does not Granger-cause
-Hurricanes,MSFT,0.15124531935048333,Does not Granger-cause
-Hurricanes,^IXIC,0.15665238260050376,Does not Granger-cause
+BTC,QQQ,0.13306879712863542,Does not Granger-cause
+Gas US,XOM,0.13949126133503778,Does not Granger-cause
+Measles,PFE,0.14229901290611255,Does not Granger-cause
+BTC,BAC,0.14552569290524142,Does not Granger-cause
+Hurricanes,JNJ,0.14643011010092813,Does not Granger-cause
 GDP,JNJ,0.16438085676765107,Does not Granger-cause
-Measles,NVDA,0.16477908008082126,Does not Granger-cause
 Netflix,GOOG,0.16539049623356877,Does not Granger-cause
 Tesla,XOM,0.17331629950767963,Does not Granger-cause
-Inflation,NFLX,0.17641229298182245,Does not Granger-cause
 Netflix,MSFT,0.17768048837166397,Does not Granger-cause
 GDP,MSFT,0.17775625856365143,Does not Granger-cause
 Meta,BAC,0.18420813062702704,Does not Granger-cause
-Measles,^GSPC,0.18685988291463526,Does not Granger-cause
+BTC,GOOG,0.18561020202421374,Does not Granger-cause
 Netflix,META,0.1880600238655219,Does not Granger-cause
-Measles,MSFT,0.18814201240168368,Does not Granger-cause
-ETH,NFLX,0.19051906835291307,Does not Granger-cause
-Measles,COIN,0.1913328615609519,Does not Granger-cause
-Hurricanes,NVDA,0.19687070234191947,Does not Granger-cause
-Measles,PFE,0.19738576930596544,Does not Granger-cause
+Measles,JNJ,0.19713063367064806,Does not Granger-cause
+US Semi Conductor,WMT,0.1988360169541224,Does not Granger-cause
 SpaceX,XOM,0.19982424627047768,Does not Granger-cause
-ETH,^GSPC,0.20225016284131567,Does not Granger-cause
-Hurricanes,AAPL,0.21242208277984234,Does not Granger-cause
-Gas US,TSLA,0.21489251535180245,Does not Granger-cause
+BTC,XOM,0.2106992597361804,Does not Granger-cause
 SpaceX,AAPL,0.21637834796980324,Does not Granger-cause
-US Semi Conductor,WMT,0.22058608886534553,Does not Granger-cause
-ETH,GOOG,0.22766239295969956,Does not Granger-cause
+Gas US,GOOG,0.21773176305441214,Does not Granger-cause
+Measles,MSFT,0.21820098759282705,Does not Granger-cause
+Hurricanes,NVDA,0.2196099472176154,Does not Granger-cause
+Inflation,NFLX,0.22796775568404742,Does not Granger-cause
 GDP,BAC,0.22812008042953252,Does not Granger-cause
-Measles,^IXIC,0.23434562464170194,Does not Granger-cause
-Hurricanes,PFE,0.24027937796712256,Does not Granger-cause
-GDP,^FCHI,0.248327607045147,Does not Granger-cause
-Measles,URTH,0.2574439897224802,Does not Granger-cause
+Hurricanes,AMZN,0.2314228614400672,Does not Granger-cause
+US Semi Conductor,NVDA,0.23828348121648754,Does not Granger-cause
+BTC,JNJ,0.23918703274186795,Does not Granger-cause
+US Semi Conductor,JPM,0.24321110017820857,Does not Granger-cause
+Hurricanes,INTC,0.24743628877512971,Does not Granger-cause
+Gas US,TSLA,0.2476956164274162,Does not Granger-cause
+ETH,QQQ,0.25342698037681405,Does not Granger-cause
 Apple,JNJ,0.2601021920962116,Does not Granger-cause
-US Semi Conductor,NFLX,0.272763917951277,Does not Granger-cause
+ETH,AAPL,0.26298597540753604,Does not Granger-cause
+Measles,WMT,0.26909976587088547,Does not Granger-cause
+ETH,SPY,0.2695339842749344,Does not Granger-cause
+BTC,AMZN,0.278275332063958,Does not Granger-cause
+Gas US,JNJ,0.2820680911375481,Does not Granger-cause
+Hurricanes,XOM,0.2828547555778317,Does not Granger-cause
+Hurricanes,PFE,0.28363751700373424,Does not Granger-cause
 SpaceX,GOOG,0.2871551280599023,Does not Granger-cause
-BTC,URTH,0.2894039864625161,Does not Granger-cause
-Hurricanes,META,0.29060187813196636,Does not Granger-cause
 GDP,WMT,0.2933321484406525,Does not Granger-cause
 Tesla,GOOG,0.2939231903066029,Does not Granger-cause
-Hurricanes,^GSPC,0.29416444262627384,Does not Granger-cause
 Meta,XOM,0.29562707328620264,Does not Granger-cause
 GDP,PFE,0.29753415680283507,Does not Granger-cause
 Apple,GOOG,0.2977607097935129,Does not Granger-cause
-Hurricanes,COIN,0.2989937077385412,Does not Granger-cause
-Gas US,AMZN,0.30991386107700836,Does not Granger-cause
-ETH,COIN,0.3149355466471824,Does not Granger-cause
-BTC,META,0.3179359789915225,Does not Granger-cause
+Gas US,COIN,0.31720114218030065,Does not Granger-cause
+Measles,SPY,0.31734407072375337,Does not Granger-cause
 GDP,AMZN,0.3219604715567635,Does not Granger-cause
-Gas US,COIN,0.32421762738755006,Does not Granger-cause
+Measles,NVDA,0.323364108507837,Does not Granger-cause
+Hurricanes,IWDA.AS,0.32419325184037245,Does not Granger-cause
 Tesla,NVDA,0.3245294864558711,Does not Granger-cause
+Gas US,INTC,0.3287057988241937,Does not Granger-cause
+Measles,AMZN,0.3299812083305287,Does not Granger-cause
 Apple,COIN,0.3300818739465915,Does not Granger-cause
 WTI Oil,META,0.33213207552160573,Does not Granger-cause
 Tesla,AMZN,0.33317866898622717,Does not Granger-cause
-BTC,WMT,0.33330269209920915,Does not Granger-cause
-ETH,URTH,0.3386801217132446,Does not Granger-cause
+Measles,GOOG,0.33468468062733053,Does not Granger-cause
+BTC,JPM,0.33502375642455845,Does not Granger-cause
+Apple,IWDA.AS,0.34213074660249204,Does not Granger-cause
 Tesla,NFLX,0.3440546200025588,Does not Granger-cause
-BTC,JPM,0.3534603641279381,Does not Granger-cause
-ETH,^IXIC,0.35881004878764494,Does not Granger-cause
+Inflation,XOM,0.350659693985763,Does not Granger-cause
+US Semi Conductor,AMZN,0.35258259455600116,Does not Granger-cause
 Meta,JPM,0.36283622639875585,Does not Granger-cause
-Measles,JPM,0.36749503796529914,Does not Granger-cause
-Measles,AMZN,0.3736717204733043,Does not Granger-cause
-Hurricanes,^FCHI,0.374316152083071,Does not Granger-cause
-Measles,JNJ,0.381244032365786,Does not Granger-cause
+Hurricanes,AAPL,0.37645571270135064,Does not Granger-cause
+US Semi Conductor,JNJ,0.37719876968475213,Does not Granger-cause
+Inflation,AAPL,0.37781400574483726,Does not Granger-cause
 GDP,GOOG,0.3904625731237346,Does not Granger-cause
-ETH,AAPL,0.3925842934484429,Does not Granger-cause
-Gas US,GOOG,0.3938292839277423,Does not Granger-cause
-US Semi Conductor,META,0.39800025199948713,Does not Granger-cause
+Hurricanes,WMT,0.3911209653816814,Does not Granger-cause
+BTC,NFLX,0.3939251364813873,Does not Granger-cause
 Netflix,XOM,0.40144976365378027,Does not Granger-cause
+Hurricanes,QQQ,0.4035316321434787,Does not Granger-cause
 WTI Oil,MSFT,0.4050149031525432,Does not Granger-cause
-Measles,GOOG,0.40917128289586646,Does not Granger-cause
-Hurricanes,URTH,0.40966648277201634,Does not Granger-cause
-BTC,NFLX,0.41202597915526884,Does not Granger-cause
+US Semi Conductor,XOM,0.4091962073871885,Does not Granger-cause
+Measles,QQQ,0.41391480811569287,Does not Granger-cause
+ETH,GOOG,0.41419539369630876,Does not Granger-cause
 WTI Oil,JNJ,0.41784999476139106,Does not Granger-cause
-Inflation,COIN,0.42142978882666837,Does not Granger-cause
 SpaceX,NFLX,0.4215030103750327,Does not Granger-cause
-SpaceX,^IXIC,0.42306522109437983,Does not Granger-cause
-Gas US,INTC,0.4258739961794481,Does not Granger-cause
-ETH,WMT,0.43177566494810604,Does not Granger-cause
-US Semi Conductor,NVDA,0.43372311121819973,Does not Granger-cause
+ETH,IWDA.AS,0.42229034517093267,Does not Granger-cause
+Measles,JPM,0.42353405082197626,Does not Granger-cause
+US Semi Conductor,GOOG,0.4244129193038361,Does not Granger-cause
+Gas US,META,0.42506250588097516,Does not Granger-cause
+US Semi Conductor,PFE,0.4301595443439261,Does not Granger-cause
+Inflation,JNJ,0.4306768269405653,Does not Granger-cause
+BTC,WMT,0.43187449316424165,Does not Granger-cause
 SpaceX,MSFT,0.434725195582219,Does not Granger-cause
 Tesla,WMT,0.4425050436772294,Does not Granger-cause
-Netflix,^FCHI,0.45603212210106037,Does not Granger-cause
+US Semi Conductor,MSFT,0.44424404436934806,Does not Granger-cause
+Inflation,WMT,0.4553998384064568,Does not Granger-cause
 SpaceX,AMZN,0.45666979964070664,Does not Granger-cause
 Apple,PFE,0.4568353137120489,Does not Granger-cause
-ETH,BAC,0.45755318127043576,Does not Granger-cause
-Tesla,^FCHI,0.4612269250116494,Does not Granger-cause
-Gas US,MSFT,0.4622124564354485,Does not Granger-cause
+Hurricanes,JPM,0.45955922747960787,Does not Granger-cause
+Hurricanes,COIN,0.46015876561758484,Does not Granger-cause
+ETH,PFE,0.4604121604820758,Does not Granger-cause
+BTC,META,0.4606794198215389,Does not Granger-cause
 WTI Oil,JPM,0.46313933876757807,Does not Granger-cause
 Apple,NVDA,0.4641446448589087,Does not Granger-cause
 Apple,NFLX,0.4643940888049497,Does not Granger-cause
-US Semi Conductor,INTC,0.4648333319490525,Does not Granger-cause
 Netflix,AMZN,0.46608280544825953,Does not Granger-cause
 Netflix,JPM,0.4710416574705195,Does not Granger-cause
-BTC,COIN,0.47672019545940814,Does not Granger-cause
+ETH,META,0.47744922565297365,Does not Granger-cause
+Hurricanes,NFLX,0.47850411535777493,Does not Granger-cause
 Meta,MSFT,0.48221396451418364,Does not Granger-cause
-Inflation,GOOG,0.4822272567696825,Does not Granger-cause
+Hurricanes,META,0.4827845552784772,Does not Granger-cause
 WTI Oil,GOOG,0.4830842827335241,Does not Granger-cause
+WTI Oil,QQQ,0.4847068393543035,Does not Granger-cause
 WTI Oil,AAPL,0.4869196895909279,Does not Granger-cause
-US Semi Conductor,BAC,0.5003333070149979,Does not Granger-cause
-Measles,^FCHI,0.5003795973868878,Does not Granger-cause
-US Semi Conductor,^FCHI,0.5011570289281497,Does not Granger-cause
+US Semi Conductor,INTC,0.49393964082191544,Does not Granger-cause
+US Semi Conductor,IWDA.AS,0.5030346998018431,Does not Granger-cause
 Netflix,NFLX,0.5057782064404186,Does not Granger-cause
-Inflation,BAC,0.5077163450193316,Does not Granger-cause
-Gas US,JNJ,0.5085484777810932,Does not Granger-cause
-Measles,XOM,0.508763521876429,Does not Granger-cause
+US Semi Conductor,QQQ,0.5088319671430364,Does not Granger-cause
 SpaceX,META,0.5094754439015341,Does not Granger-cause
-US Semi Conductor,MSFT,0.5112088985249872,Does not Granger-cause
-Inflation,MSFT,0.5113467851630412,Does not Granger-cause
-BTC,^GSPC,0.5185263348062068,Does not Granger-cause
-ETH,TSLA,0.5233405072346267,Does not Granger-cause
+SpaceX,QQQ,0.5274636482386066,Does not Granger-cause
+US Semi Conductor,SPY,0.5281195869227661,Does not Granger-cause
 GDP,NVDA,0.5312491709116615,Does not Granger-cause
+WTI Oil,IWDA.AS,0.5350273732418142,Does not Granger-cause
 GDP,NFLX,0.5358886894526553,Does not Granger-cause
-BTC,GOOG,0.5464037097449905,Does not Granger-cause
-WTI Oil,^IXIC,0.5492202891829261,Does not Granger-cause
-Netflix,URTH,0.5569119768435433,Does not Granger-cause
-SpaceX,URTH,0.5637890760446861,Does not Granger-cause
-SpaceX,^GSPC,0.5654077094930814,Does not Granger-cause
+US Semi Conductor,COIN,0.5370722386724038,Does not Granger-cause
+ETH,COIN,0.5463527307163855,Does not Granger-cause
+ETH,BAC,0.5496152026199146,Does not Granger-cause
+Gas US,MSFT,0.5583103294576867,Does not Granger-cause
+US Semi Conductor,NFLX,0.5629558118499448,Does not Granger-cause
+Tesla,QQQ,0.5695354607789717,Does not Granger-cause
 Apple,JPM,0.5697326923368138,Does not Granger-cause
-ETH,PFE,0.5922601418424644,Does not Granger-cause
+Measles,COIN,0.5821287440422273,Does not Granger-cause
+Hurricanes,MSFT,0.5917142414649443,Does not Granger-cause
+Gas US,PFE,0.5918824693733177,Does not Granger-cause
 Meta,COIN,0.5935225159857316,Does not Granger-cause
-US Semi Conductor,^IXIC,0.599825376013795,Does not Granger-cause
+BTC,INTC,0.594964367381627,Does not Granger-cause
+SpaceX,SPY,0.5953474204619709,Does not Granger-cause
 Netflix,COIN,0.6037269429760641,Does not Granger-cause
-BTC,^IXIC,0.6039573879657083,Does not Granger-cause
+Inflation,MSFT,0.6088958294443243,Does not Granger-cause
 WTI Oil,PFE,0.6110670126743771,Does not Granger-cause
 Apple,XOM,0.6134546301038521,Does not Granger-cause
 WTI Oil,BAC,0.6150781957663455,Does not Granger-cause
-Hurricanes,JPM,0.6154896949255817,Does not Granger-cause
-BTC,MSFT,0.6162765650341242,Does not Granger-cause
-ETH,JNJ,0.6186321559247492,Does not Granger-cause
-Gas US,WMT,0.619014228223436,Does not Granger-cause
-BTC,NVDA,0.6235007025381158,Does not Granger-cause
-Tesla,^IXIC,0.6280628410474478,Does not Granger-cause
-Hurricanes,WMT,0.6291902367221549,Does not Granger-cause
+Inflation,PFE,0.6311667326795587,Does not Granger-cause
 GDP,TSLA,0.6318933511606766,Does not Granger-cause
 WTI Oil,TSLA,0.6343342305918256,Does not Granger-cause
+Gas US,AMZN,0.6345782409840985,Does not Granger-cause
 Apple,BAC,0.6357491449710588,Does not Granger-cause
-ETH,INTC,0.6369106145517116,Does not Granger-cause
+US Semi Conductor,BAC,0.6360773280152019,Does not Granger-cause
 Netflix,JNJ,0.64127585767409645,Does not Granger-cause
-Gas US,META,0.6482151273856702,Does not Granger-cause
 Tesla,INTC,0.6482221510084174,Does not Granger-cause
+US Semi Conductor,TSLA,0.6491426313264959,Does not Granger-cause
+ETH,TSLA,0.6561092894596187,Does not Granger-cause
 SpaceX,INTC,0.6585857843585322,Does not Granger-cause
-Measles,BAC,0.6618808738030579,Does not Granger-cause
-WTI Oil,^GSPC,0.6690032310874393,Does not Granger-cause
-Inflation,JNJ,0.6695404082787721,Does not Granger-cause
+BTC,NVDA,0.6675228620643558,Does not Granger-cause
+Measles,BAC,0.6694891793278376,Does not Granger-cause
 SpaceX,PFE,0.671599832191313,Does not Granger-cause
+Netflix,QQQ,0.676705099943172,Does not Granger-cause
 SpaceX,COIN,0.6771425591239499,Does not Granger-cause
-Inflation,WMT,0.6785377446854473,Does not Granger-cause
-Hurricanes,NFLX,0.6789585861208092,Does not Granger-cause
-Hurricanes,INTC,0.6796815397535878,Does not Granger-cause
+Netflix,SPY,0.6789119952865055,Does not Granger-cause
+Hurricanes,SPY,0.6797447196149673,Does not Granger-cause
+BTC,TSLA,0.681176601896335,Does not Granger-cause
 Meta,TSLA,0.6867254850980513,Does not Granger-cause
 Meta,WMT,0.6899503400438481,Does not Granger-cause
-Netflix,^GSPC,0.6960935499404106,Does not Granger-cause
-US Semi Conductor,^GSPC,0.7010984258659569,Does not Granger-cause
+Measles,META,0.694100977525558,Does not Granger-cause
+Gas US,NVDA,0.6985619103702345,Does not Granger-cause
+WTI Oil,SPY,0.7016211381394739,Does not Granger-cause
+BTC,MSFT,0.7037926154090418,Does not Granger-cause
 Meta,INTC,0.7057980468841778,Does not Granger-cause
-ETH,AMZN,0.7100235100603651,Does not Granger-cause
-US Semi Conductor,GOOG,0.7102722015001787,Does not Granger-cause
+Meta,IWDA.AS,0.720894508129594,Does not Granger-cause
 Meta,AAPL,0.7210709581773096,Does not Granger-cause
-Gas US,^FCHI,0.7255334895234848,Does not Granger-cause
-US Semi Conductor,COIN,0.7276282964323398,Does not Granger-cause
 Tesla,MSFT,0.7278543724410285,Does not Granger-cause
-WTI Oil,URTH,0.7304829035676477,Does not Granger-cause
-ETH,NVDA,0.7339231230054877,Does not Granger-cause
-ETH,XOM,0.7371023557667891,Does not Granger-cause
-ETH,META,0.7394429231110039,Does not Granger-cause
+ETH,AMZN,0.7343644083638674,Does not Granger-cause
+Inflation,GOOG,0.7358444436389566,Does not Granger-cause
+Meta,QQQ,0.7393656952989787,Does not Granger-cause
 Apple,META,0.7411635000750093,Does not Granger-cause
-US Semi Conductor,JPM,0.7452947799380341,Does not Granger-cause
-Inflation,URTH,0.7540423536294893,Does not Granger-cause
-US Semi Conductor,AAPL,0.7546078838712122,Does not Granger-cause
-Inflation,XOM,0.7548707844781763,Does not Granger-cause
-Inflation,^GSPC,0.7584036727977149,Does not Granger-cause
-Meta,^GSPC,0.7617523026986265,Does not Granger-cause
-Meta,URTH,0.7643123859251219,Does not Granger-cause
-Tesla,^GSPC,0.769980280129162,Does not Granger-cause
-BTC,AMZN,0.7745647570200289,Does not Granger-cause
+Gas US,IWDA.AS,0.7447208381721102,Does not Granger-cause
+Meta,SPY,0.7553010555939086,Does not Granger-cause
+ETH,NVDA,0.7583754751491901,Does not Granger-cause
+US Semi Conductor,META,0.7590631527879828,Does not Granger-cause
+Netflix,IWDA.AS,0.7658610952829767,Does not Granger-cause
+Hurricanes,BAC,0.7727368917424187,Does not Granger-cause
 WTI Oil,XOM,0.7779688312128807,Does not Granger-cause
-Measles,INTC,0.7817989257921774,Does not Granger-cause
-Tesla,URTH,0.783670828229124,Does not Granger-cause
-Inflation,^FCHI,0.7847588812556152,Does not Granger-cause
+Measles,INTC,0.7834601541017315,Does not Granger-cause
+Gas US,JPM,0.7856785861883944,Does not Granger-cause
 Tesla,META,0.7858732941501466,Does not Granger-cause
-Meta,^IXIC,0.7898047931261608,Does not Granger-cause
-US Semi Conductor,JNJ,0.793329192505847,Does not Granger-cause
-Apple,^FCHI,0.7979205559617575,Does not Granger-cause
+ETH,JNJ,0.7867343857683041,Does not Granger-cause
+Gas US,WMT,0.7871035774059694,Does not Granger-cause
+Measles,IWDA.AS,0.7936749971166802,Does not Granger-cause
 Meta,NVDA,0.8042651198910383,Does not Granger-cause
-Inflation,AAPL,0.806622000771674,Does not Granger-cause
-BTC,^FCHI,0.8119486134899524,Does not Granger-cause
-Gas US,URTH,0.8129281246653302,Does not Granger-cause
-Netflix,^IXIC,0.8196515145906005,Does not Granger-cause
+Tesla,SPY,0.8091586465160293,Does not Granger-cause
+BTC,AAPL,0.8117473766353135,Does not Granger-cause
+Measles,XOM,0.813479530635046,Does not Granger-cause
+Inflation,IWDA.AS,0.8168162435468483,Does not Granger-cause
 Tesla,BAC,0.8200620868644061,Does not Granger-cause
-BTC,INTC,0.8204737626755475,Does not Granger-cause
-Measles,TSLA,0.8233245867885771,Does not Granger-cause
+ETH,NFLX,0.8236492801436346,Does not Granger-cause
 Netflix,TSLA,0.8238029984515544,Does not Granger-cause
 Netflix,INTC,0.8248988539032049,Does not Granger-cause
 Apple,MSFT,0.8275516741795689,Does not Granger-cause
-Inflation,JPM,0.8277843040712198,Does not Granger-cause
-Inflation,^IXIC,0.8280833923783011,Does not Granger-cause
 Apple,TSLA,0.8288180651172941,Does not Granger-cause
-Measles,WMT,0.8445957039600822,Does not Granger-cause
 SpaceX,NVDA,0.845380459121997,Does not Granger-cause
-Gas US,NFLX,0.8511276821865199,Does not Granger-cause
+Inflation,TSLA,0.8478535339351346,Does not Granger-cause
 Netflix,BAC,0.85429056751359,Does not Granger-cause
 Meta,META,0.8589072046236725,Does not Granger-cause
-WTI Oil,^FCHI,0.8618668371364944,Does not Granger-cause
 WTI Oil,AMZN,0.867234986011719,Does not Granger-cause
-Hurricanes,BAC,0.8706071673598074,Does not Granger-cause
-Measles,AAPL,0.8718299499888127,Does not Granger-cause
+ETH,XOM,0.8678188384582223,Does not Granger-cause
+Inflation,BAC,0.8682367922507555,Does not Granger-cause
+Inflation,JPM,0.8684593869528393,Does not Granger-cause
 WTI Oil,COIN,0.8719114869882489,Does not Granger-cause
 WTI Oil,NVDA,0.8738860144741777,Does not Granger-cause
-Gas US,^IXIC,0.8739384299398387,Does not Granger-cause
-ETH,JPM,0.8747521443244497,Does not Granger-cause
+Measles,AAPL,0.8742879442320775,Does not Granger-cause
 Apple,AMZN,0.8756745829468218,Does not Granger-cause
-Gas US,PFE,0.8843729795530462,Does not Granger-cause
+ETH,INTC,0.8796648141580539,Does not Granger-cause
+Gas US,NFLX,0.8827699250330686,Does not Granger-cause
 Tesla,JPM,0.885328637410934,Does not Granger-cause
-US Semi Conductor,URTH,0.8925697378927222,Does not Granger-cause
-Gas US,^GSPC,0.8947215035029591,Does not Granger-cause
-Apple,^GSPC,0.8950664202017155,Does not Granger-cause
-Apple,URTH,0.8995276950260525,Does not Granger-cause
+Inflation,META,0.8874710699307792,Does not Granger-cause
+Inflation,NVDA,0.8883880311535659,Does not Granger-cause
+Gas US,AAPL,0.8908699379115741,Does not Granger-cause
+ETH,JPM,0.8920103461575216,Does not Granger-cause
 Netflix,WMT,0.9008873119464239,Does not Granger-cause
 SpaceX,JNJ,0.9022096351535036,Does not Granger-cause
-Meta,^FCHI,0.9059292213347225,Does not Granger-cause
-Inflation,PFE,0.9165661335837056,Does not Granger-cause
+Inflation,INTC,0.9036676008143525,Does not Granger-cause
+Apple,SPY,0.9128082022175523,Does not Granger-cause
+Apple,QQQ,0.9152198676149365,Does not Granger-cause
 SpaceX,BAC,0.9193127405959465,Does not Granger-cause
 Tesla,JNJ,0.9218550506277214,Does not Granger-cause
-Gas US,JPM,0.921868295273449,Does not Granger-cause
 WTI Oil,NFLX,0.9250390545751392,Does not Granger-cause
-BTC,TSLA,0.9254470847163347,Does not Granger-cause
+Inflation,QQQ,0.9256761056916172,Does not Granger-cause
 Meta,AMZN,0.9346751742505887,Does not Granger-cause
-Inflation,NVDA,0.941200936544236,Does not Granger-cause
-US Semi Conductor,XOM,0.9450174266975487,Does not Granger-cause
-Inflation,INTC,0.9497983406965729,Does not Granger-cause
-Gas US,AAPL,0.9501079514665468,Does not Granger-cause
-Inflation,META,0.956034284343997,Does not Granger-cause
-Inflation,AMZN,0.958420002185874,Does not Granger-cause
-Inflation,TSLA,0.9676325924488816,Does not Granger-cause
+Inflation,COIN,0.9361392456741633,Does not Granger-cause
+BTC,COIN,0.936593817625885,Does not Granger-cause
+Gas US,QQQ,0.9369349417439374,Does not Granger-cause
+Inflation,SPY,0.938249164776154,Does not Granger-cause
+US Semi Conductor,AAPL,0.9416083829384239,Does not Granger-cause
+SpaceX,IWDA.AS,0.9522256131193738,Does not Granger-cause
+Measles,TSLA,0.9579602223383006,Does not Granger-cause
+ETH,WMT,0.9648299672650575,Does not Granger-cause
 Apple,INTC,0.9702940560022897,Does not Granger-cause
 Netflix,AAPL,0.9705068633506684,Does not Granger-cause
 SpaceX,WMT,0.9727739187941463,Does not Granger-cause
-ETH,^FCHI,0.9737941816923426,Does not Granger-cause
-Apple,^IXIC,0.9742487917962106,Does not Granger-cause
 WTI Oil,INTC,0.9778279095427166,Does not Granger-cause
 Meta,NFLX,0.9779221985120226,Does not Granger-cause
 Tesla,AAPL,0.9810521578755028,Does not Granger-cause
 Netflix,NVDA,0.9819936999277106,Does not Granger-cause
+Tesla,IWDA.AS,0.9833713892608043,Does not Granger-cause
+Inflation,AMZN,0.9851473372470714,Does not Granger-cause
 Meta,GOOG,0.9863446709826531,Does not Granger-cause
-Gas US,BAC,0.9872365168879418,Does not Granger-cause
-Gas US,NVDA,0.991744538257709,Does not Granger-cause
-BTC,AAPL,0.9925241405097156,Does not Granger-cause
+Gas US,SPY,0.986429341144643,Does not Granger-cause
 Tesla,COIN,0.9944333082162844,Does not Granger-cause
 SpaceX,JPM,0.9946780270352397,Does not Granger-cause
-US Semi Conductor,PFE,0.9959113795542032,Does not Granger-cause
 Apple,AAPL,0.99719982267949,Does not Granger-cause
+Gas US,BAC,0.9982074904699632,Does not Granger-cause

@@ -196,225 +196,188 @@ df_combined <- df_combined %>% filter(!is.na(returns))
 data_tbl <- df_combined %>% select(date, ticker, value = returns, id, pred_daily)
 
 ################################################################################
-# 9. MODEL CREATION AND TRAINING
+# 9. MODEL CREATION AND TRAINING - PAR TICKER
 ################################################################################
 
-# Create time series split for modeling
-data_tbl %>%
-  group_by(ticker) %>%
-  plot_time_series(
-    date, value, .interactive = FALSE, .facet_ncol = 3
-  )
+# Liste des tickers (actions) à modéliser
+tickers_to_model <- unique(data_tbl$ticker)
 
-# Create walk-forward time series split
-splits <- data_tbl %>%
-  arrange(date) %>%  # Ensure data is ordered by date
-  time_series_cv(
-    date_var   = date,
-    initial    = "150 days",     # ~5 months
-    assess     = "75 days",      # ~2.5 months
-    skip       = "75 days",      # Step of 2.5 months
-    cumulative = TRUE,          # Keep all previous data in training
-    slice_limit = 2             # Limit to 2 folds
-  )
-
-# Print splits to verify
-print(splits)
-
-# Get both splits for training and testing
-first_split <- splits$splits[[2]]
-second_split <- splits$splits[[1]]
-
-# Get training and testing data for both splits
-train_data_1 <- analysis(first_split)
-test_data_1 <- assessment(first_split)
-train_data_2 <- analysis(second_split)
-test_data_2 <- assessment(second_split)
-
-# Create XGBoost preprocessing recipe
-rec_obj_xgb_1 <- recipe(value ~ ., data = train_data_1) %>%
-  step_timeseries_signature(date) %>%
-  step_rm(date) %>%
-  step_zv(all_predictors()) %>%
-  step_dummy(all_nominal_predictors(), one_hot = TRUE)
-
-print(summary(prep(rec_obj_xgb_1)), n = Inf)
-
-rec_obj_xgb_2 <- recipe(value ~ ., data = train_data_2) %>%
-  step_timeseries_signature(date) %>%
-  step_rm(date) %>%
-  step_zv(all_predictors()) %>%
-  step_dummy(all_nominal_predictors(), one_hot = TRUE)
-
-summary(prep(rec_obj_xgb_2))
-
-
-# Create and fit XGBoost workflow for first fold
-wflw_xgb_1 <- workflow() %>%
-  add_model(boost_tree("regression") %>% set_engine("xgboost")) %>%
-  add_recipe(rec_obj_xgb_1) %>%
-  fit(train_data_1)
-
-wflw_xgb_1
-
-# Create and fit XGBoost workflow for second fold
-wflw_xgb_2 <- workflow() %>%
-  add_model(boost_tree("regression") %>% set_engine("xgboost")) %>%
-  add_recipe(rec_obj_xgb_2) %>%
-  fit(train_data_2)
-
-wflw_xgb_2
-
-# Create model table and calibrate for both folds
-model_tbl_1 <- modeltime_table(wflw_xgb_1)
-model_tbl_2 <- modeltime_table(wflw_xgb_2)
-
-calib_tbl_1 <- model_tbl_1 %>% 
-  modeltime_calibrate(
-    new_data = test_data_1, 
-    id = "ticker"
-  )
-
-calib_tbl_2 <- model_tbl_2 %>% 
-  modeltime_calibrate(
-    new_data = test_data_2, 
-    id = "ticker"
-  )
-
-# Evaluate model accuracy for both folds
-# Overall accuracy metrics
-cat("\nAccuracy metrics for first fold:\n")
-calib_tbl_1 %>% 
-  modeltime_accuracy(acc_by_id = FALSE) %>% 
-  table_modeltime_accuracy(.interactive = FALSE)
-
-cat("\nAccuracy metrics for second fold:\n")
-calib_tbl_2 %>% 
-  modeltime_accuracy(acc_by_id = FALSE) %>% 
-  table_modeltime_accuracy(.interactive = FALSE)
-
-# Accuracy metrics by ticker
-cat("\nAccuracy metrics by ticker for first fold:\n")
-calib_tbl_1 %>% 
-  modeltime_accuracy(acc_by_id = TRUE) %>% 
-  table_modeltime_accuracy(.interactive = FALSE)
-
-cat("\nAccuracy metrics by ticker for second fold:\n")
-calib_tbl_2 %>% 
-  modeltime_accuracy(acc_by_id = TRUE) %>% 
-  table_modeltime_accuracy(.interactive = FALSE)
-
-# Visualize model performance for both folds
-cat("\nVisualizing first fold performance:\n")
-calib_tbl_1 %>%
-  modeltime_forecast(
-    new_data = test_data_1,
-    actual_data = data_tbl,
-    conf_by_id = TRUE
-  ) %>%
-  group_by(ticker) %>%
-  plot_modeltime_forecast(
-    .facet_ncol = 3,
-    .interactive = FALSE
-  )
-
-cat("\nVisualizing second fold performance:\n")
-calib_tbl_2 %>%
-  modeltime_forecast(
-    new_data = test_data_2,
-    actual_data = data_tbl,
-    conf_by_id = TRUE
-  ) %>%
-  group_by(ticker) %>%
-  plot_modeltime_forecast(
-    .facet_ncol = 3,
-    .interactive = FALSE
-  )
-
-# Calculate forecast errors for both folds
-forecast_test_1 <- calib_tbl_1 %>%
-  modeltime_forecast(
-    new_data = test_data_1,
-    actual_data = data_tbl,
-    conf_by_id = TRUE
-  )
-
-forecast_test_2 <- calib_tbl_2 %>%
-  modeltime_forecast(
-    new_data = test_data_2,
-    actual_data = data_tbl,
-    conf_by_id = TRUE
-  )
-
-# Combine forecast errors from both folds
-forecast_errors <- bind_rows(
-  # First fold errors
-  forecast_test_1 %>%
-    group_by(.index, ticker) %>%
-    mutate(
-      has_actual = any(.key == "actual"),
-      has_prediction = any(.key == "prediction")
-    ) %>%
-    filter(has_actual & has_prediction) %>%
-    summarise(
-      y_t = mean(.value[.key == "actual"], na.rm = TRUE),
-      y_hat_t = mean(.value[.key == "prediction"], na.rm = TRUE),
-      fold = "Fold 1",
-      .groups = "drop"
-    ) %>%
-    mutate(e1_t = y_t - y_hat_t),
+# Fonction pour créer modèle XGBoost pour chaque ticker
+create_xgboost_model_per_ticker <- function(ticker_name) {
+  data_ticker <- data_tbl %>% filter(ticker == ticker_name)
   
-  # Second fold errors
-  forecast_test_2 %>%
-    group_by(.index, ticker) %>%
-    mutate(
-      has_actual = any(.key == "actual"),
-      has_prediction = any(.key == "prediction")
-    ) %>%
-    filter(has_actual & has_prediction) %>%
-    summarise(
-      y_t = mean(.value[.key == "actual"], na.rm = TRUE),
-      y_hat_t = mean(.value[.key == "prediction"], na.rm = TRUE),
-      fold = "Fold 2",
-      .groups = "drop"
-    ) %>%
-    mutate(e1_t = y_t - y_hat_t)
-) %>%
-  filter(!is.na(y_t) & !is.na(y_hat_t))
-
-# Display forecast errors
-cat("\nForecast errors for both folds:\n")
-print(head(forecast_errors))
-
-# Save forecast errors
-saveRDS(forecast_errors, "data/rds/forecast_errors.rds")
-
-################################################################################
-# 10. SAVE RESULTS
-################################################################################
-
-# Calculate RMSE for each ticker in each fold
-global_rmse_by_ticker_fold1 <- calib_tbl_1 %>% 
-  modeltime_accuracy(acc_by_id = TRUE) %>%
-  select(ticker, global_rmse_fold1 = rmse)
-
-global_rmse_by_ticker_fold2 <- calib_tbl_2 %>% 
-  modeltime_accuracy(acc_by_id = TRUE) %>%
-  select(ticker, global_rmse_fold2 = rmse)
-
-# Combine RMSE results for both folds
-global_rmse_results <- inner_join(
-  global_rmse_by_ticker_fold1,
-  global_rmse_by_ticker_fold2,
-  by = "ticker"
-) %>%
-  mutate(
-    global_rmse_avg = (global_rmse_fold1 + global_rmse_fold2) / 2
+  if (nrow(data_ticker) < 100) {
+    message(paste("Pas assez de données pour", ticker_name))
+    return(NULL)
+  }
+  
+  splits <- time_series_cv(
+    data_ticker,
+    date_var   = date,
+    initial    = "150 days",
+    assess     = "75 days",
+    skip       = "75 days",
+    cumulative = TRUE,
+    slice_limit = 2
   )
+  
+  accuracy_list <- list()
+  forecast_list <- list()
+  
+  for (i in seq_along(splits$splits)) {
+    split <- splits$splits[[i]]
+    train_data <- analysis(split)
+    test_data  <- assessment(split)
+    
+    rec <- recipe(value ~ ., data = train_data) %>%
+      step_rm(ticker) %>%
+      step_normalize(all_numeric(), -all_outcomes()) %>%
+      step_timeseries_signature(date) %>%
+      step_rm(date) %>%
+      step_zv(all_predictors()) %>%
+      step_dummy(all_nominal_predictors(), one_hot = TRUE)
+    
+    wf <- workflow() %>%
+      add_model(boost_tree("regression") %>% set_engine("xgboost")) %>%
+      add_recipe(rec) %>%
+      fit(train_data)
+    
+    model_tbl <- modeltime_table(wf)
+    calib_tbl <- model_tbl %>%
+      modeltime_calibrate(new_data = test_data)
+    
+    forecast_tbl <- calib_tbl %>%
+      modeltime_forecast(new_data = test_data, actual_data = data_ticker)
+    
+    accuracy_tbl <- calib_tbl %>%
+      modeltime_accuracy() %>%
+      mutate(fold = paste0("Fold_", i))
+    
+    accuracy_list[[i]] <- accuracy_tbl
+    forecast_list[[i]] <- forecast_tbl
+  }
+  
+  list(
+    ticker = ticker_name,
+    accuracy = bind_rows(accuracy_list),
+    forecasts = forecast_list
+  )
+}
 
-# Save RMSE results
-saveRDS(global_rmse_results, "data/rds/global_model_rmse.rds")
 
-# Save forecast results
-saveRDS(forecast_results, "data/rds/global_model_forecasts.rds")
+# Appliquer la fonction à chaque ticker
+xgboost_models_by_ticker <- tickers_to_model %>%
+  set_names() %>%
+  map(create_xgboost_model_per_ticker)
+
+# Nettoyer les NULL (tickers sans données suffisantes)
+xgboost_models_by_ticker <- compact(xgboost_models_by_ticker)
+
+# Résumé des performances : on conserve le détail par split
+accuracy_summary <- map_dfr(
+  xgboost_models_by_ticker,
+  ~ .x$accuracy %>% mutate(ticker = .x$ticker, split = row_number())
+)
+
+# Save accuracy summary to RDS file
+saveRDS(accuracy_summary, "data/rds/local_model_accuracy_metrics.rds")
+
+# Affichage des accuracies pour chaque split (fold)
+cat("===== Résultats par fold (split) =====\n")
+accuracy_summary %>%
+  select(ticker, split, mae, rmse, rsq) %>%
+  arrange(ticker, split) %>%
+  print(n = Inf)
+
+
+
+
+################################################################################
+# 10. ERROR ANALYSIS BY TIME POINT
+################################################################################
+
+# Create forecast error data frames for both folds
+xgboost_forecast_errors_fold1 <- data.frame()
+xgboost_forecast_errors_fold2 <- data.frame()
+
+# Calculate forecast errors for each ticker in both folds
+for (ticker in names(xgboost_models_by_ticker)) {
+  # Get forecasts for both folds
+  forecasts_fold1 <- xgboost_models_by_ticker[[ticker]]$forecasts[[1]]
+  forecasts_fold2 <- xgboost_models_by_ticker[[ticker]]$forecasts[[2]]
+  
+  # Process fold 1 errors
+  if (!is.null(forecasts_fold1)) {
+    # Extract the relevant data from the forecast object
+    forecast_data_fold1 <- forecasts_fold1 %>%
+      filter(.model_desc != "ACTUAL") %>%
+      select(.index, .value) %>%
+      rename(date = .index, y_hat_t = .value)
+    
+    actual_data_fold1 <- forecasts_fold1 %>%
+      filter(.model_desc == "ACTUAL") %>%
+      select(.index, .value) %>%
+      rename(date = .index, y_t = .value)
+    
+    # Join forecast and actual data
+    ticker_errors_fold1 <- forecast_data_fold1 %>%
+      left_join(actual_data_fold1, by = "date") %>%
+      mutate(
+        ticker = ticker,
+        fold = "Fold 1"
+      )
+    
+    # Calculate forecast errors
+    ticker_errors_fold1 <- ticker_errors_fold1 %>%
+      mutate(e1_t = y_t - y_hat_t) %>%
+      filter(!is.na(y_t) & !is.na(y_hat_t))
+    
+    # Add to main data frame
+    xgboost_forecast_errors_fold1 <- bind_rows(xgboost_forecast_errors_fold1, ticker_errors_fold1)
+  }
+  
+  # Process fold 2 errors
+  if (!is.null(forecasts_fold2)) {
+    # Extract the relevant data from the forecast object
+    forecast_data_fold2 <- forecasts_fold2 %>%
+      filter(.model_desc != "ACTUAL") %>%
+      select(.index, .value) %>%
+      rename(date = .index, y_hat_t = .value)
+    
+    actual_data_fold2 <- forecasts_fold2 %>%
+      filter(.model_desc == "ACTUAL") %>%
+      select(.index, .value) %>%
+      rename(date = .index, y_t = .value)
+    
+    # Join forecast and actual data
+    ticker_errors_fold2 <- forecast_data_fold2 %>%
+      left_join(actual_data_fold2, by = "date") %>%
+      mutate(
+        ticker = ticker,
+        fold = "Fold 2"
+      )
+    
+    # Calculate forecast errors
+    ticker_errors_fold2 <- ticker_errors_fold2 %>%
+      mutate(e1_t = y_t - y_hat_t) %>%
+      filter(!is.na(y_t) & !is.na(y_hat_t))
+    
+    # Add to main data frame
+    xgboost_forecast_errors_fold2 <- bind_rows(xgboost_forecast_errors_fold2, ticker_errors_fold2)
+  }
+}
+
+# Combine errors from both folds
+xgboost_forecast_errors <- bind_rows(xgboost_forecast_errors_fold1, xgboost_forecast_errors_fold2)
+
+# Remove any remaining duplicates
+xgboost_forecast_errors <- xgboost_forecast_errors %>%
+  distinct(date, ticker, fold, .keep_all = TRUE)
+
+# Save results
+saveRDS(xgboost_forecast_errors, "data/rds/xgboost_forecast_errors.rds")
+
+# Display summary statistics of forecast errors
+cat("\nSummary of XGBoost Forecast Errors:\n")
+print(summary(xgboost_forecast_errors))
 

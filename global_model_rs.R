@@ -231,43 +231,25 @@ test_data_1 <- assessment(first_split)
 train_data_2 <- analysis(second_split)
 test_data_2 <- assessment(second_split)
 
-# Create XGBoost preprocessing recipe
-rec_obj_xgb_1 <- recipe(value ~ ., data = train_data_1) %>%
-  step_timeseries_signature(date) %>%
-  step_rm(date) %>%
-  step_zv(all_predictors()) %>%
-  step_dummy(all_nominal_predictors(), one_hot = TRUE)
+# Create linear regression preprocessing recipe
+rec_obj_lm_1 <- recipe(value ~ ., data = train_data_1) 
+rec_obj_lm_2 <- recipe(value ~ ., data = train_data_2) 
 
-print(summary(prep(rec_obj_xgb_1)), n = Inf)
-
-rec_obj_xgb_2 <- recipe(value ~ ., data = train_data_2) %>%
-  step_timeseries_signature(date) %>%
-  step_rm(date) %>%
-  step_zv(all_predictors()) %>%
-  step_dummy(all_nominal_predictors(), one_hot = TRUE)
-
-summary(prep(rec_obj_xgb_2))
-
-
-# Create and fit XGBoost workflow for first fold
-wflw_xgb_1 <- workflow() %>%
-  add_model(boost_tree("regression") %>% set_engine("xgboost")) %>%
-  add_recipe(rec_obj_xgb_1) %>%
+# Create and fit linear regression workflow for first fold
+wflw_lm_1 <- workflow() %>%
+  add_model(linear_reg() %>% set_engine("lm")) %>%
+  add_recipe(rec_obj_lm_1) %>%
   fit(train_data_1)
 
-wflw_xgb_1
-
-# Create and fit XGBoost workflow for second fold
-wflw_xgb_2 <- workflow() %>%
-  add_model(boost_tree("regression") %>% set_engine("xgboost")) %>%
-  add_recipe(rec_obj_xgb_2) %>%
+# Create and fit linear regression workflow for second fold
+wflw_lm_2 <- workflow() %>%
+  add_model(linear_reg() %>% set_engine("lm")) %>%
+  add_recipe(rec_obj_lm_2) %>%
   fit(train_data_2)
 
-wflw_xgb_2
-
 # Create model table and calibrate for both folds
-model_tbl_1 <- modeltime_table(wflw_xgb_1)
-model_tbl_2 <- modeltime_table(wflw_xgb_2)
+model_tbl_1 <- modeltime_table(wflw_lm_1)
+model_tbl_2 <- modeltime_table(wflw_lm_2)
 
 calib_tbl_1 <- model_tbl_1 %>% 
   modeltime_calibrate(
@@ -387,10 +369,53 @@ cat("\nForecast errors for both folds:\n")
 print(head(forecast_errors))
 
 # Save forecast errors
-saveRDS(forecast_errors, "data/rds/forecast_errors.rds")
+saveRDS(forecast_errors, "data/rds/forecast_errors_rs.rds")
 
 ################################################################################
-# 10. SAVE RESULTS
+# 10. FORECASTING
+################################################################################
+
+# Refit model on full dataset
+refit_tbl <- calib_tbl_1 %>%
+  modeltime_refit(data = data_tbl)
+
+# Prepare data for future predictions
+data_tbl <- data_tbl %>%
+  distinct(ticker, date, .keep_all = TRUE)
+
+# Create future time frame for predictions
+future_tbl <- data_tbl %>%
+  group_by(ticker) %>%
+  future_frame(
+    .length_out = 30,  # Reduced to 30 days as we have less data
+    .date_var = date,
+    .bind_data = FALSE
+  ) %>% 
+  mutate(
+    id = NA,
+    pred_daily = NA
+  )
+
+# Generate and visualize forecasts
+forecast_results <- refit_tbl %>%
+  modeltime_forecast(
+    new_data = future_tbl,
+    actual_data = data_tbl, 
+    conf_by_id = TRUE
+  )
+
+# Visualize forecasts with adjusted parameters
+forecast_results %>%
+  group_by(ticker) %>%
+  plot_modeltime_forecast(
+    .interactive = FALSE,
+    .facet_ncol = 2,
+    .conf_interval_show = TRUE,  # Show confidence intervals
+    .conf_interval_alpha = 0.1   # Adjust confidence interval transparency
+  )
+
+################################################################################
+# 11. SAVE RESULTS
 ################################################################################
 
 # Calculate RMSE for each ticker in each fold
@@ -413,8 +438,8 @@ global_rmse_results <- inner_join(
   )
 
 # Save RMSE results
-saveRDS(global_rmse_results, "data/rds/global_model_rmse.rds")
+saveRDS(global_rmse_results, "data/rds/global_model_rmse_rs.rds")
 
 # Save forecast results
-saveRDS(forecast_results, "data/rds/global_model_forecasts.rds")
+saveRDS(forecast_results, "data/rds/global_model_forecasts_rs.rds") 
 
